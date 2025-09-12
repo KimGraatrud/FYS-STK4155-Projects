@@ -2,17 +2,64 @@ import numpy as np
 
 
 class GD:
+    """
+    Gradient-Decent based methods for finding the optimal parameter of a linear regression
+
+    Currently has regular GD, AdaGrad, RMSGrad, and ADAM algorythms implemented.
+
+    Parameters
+    -------------
+    eta : float, default=1e-3
+        Learning rate.
+    n_iterations : int, default=1e5
+        Maximum number of iterations.
+    lamb : float, default=0
+        L2 regularization coefficient (ridge).
+    mass : float, default=0
+        Momentum factor.
+    atol : float, default=1e-8 lamb, mass, atol
+        Absolute tolerance for stopping criterion.
+
+    Usage
+    -------------
+    >>> y = some data to fit
+    >>> X = some feature matrix
+    >>> GradientDecent_OLS_no_momentum = GD(eta, n_iterations, 0, 0)
+    >>> theta = GradientDecent_OLS_no_momentum.Grad(X,y)
+    >>> y_hat = X @ theta
+
+    Bsed on what you initialise the penalty and mass to be you can also do OLS with/without momentum or Ridge regresssion with/without momentum, like so
+    
+    >>> GradientDecent_Ridge_no_momentum = GD(eta, n_iterations, .001, .3)
+    >>> theta = GradientDecent_Ridge_no_momentum.Grad(X,y)
+    >>> y_hat = X @ theta
+    """
     def __init__(self, eta=1e-3, n_iterations=1e5, lamb=0, mass=0, atol=1e-8):
         self.set_niterations(n_iterations)
         self.eta = eta
         self.mass = mass
-        self.atol = atol  # TODO implement
+        self.atol = atol
         self.lamb = lamb
 
     def set_niterations(self, n):
+        """
+        Sets a new number of iterations that will be used.
+
+        Used to update the number of iterations after having the instance created.
+
+        Parameters
+        -----------
+        n  :  int
+            Number of iterations that will be used in the next GD method.
+        """
         self.n = int(np.round(n))
 
     def Grad(self, X, y):
+        """
+        Gradient decent method that does both OLS and Ridge based on the choice of lamb and mass in the constructor.
+
+        See the documentation for the whole class for a usage guide. 
+        """
         theta = np.zeros(X.shape[1])
         change = np.zeros_like(theta)
 
@@ -22,6 +69,8 @@ class GD:
             grad = 2 * ((1 / y.shape[0]) * X.T @ (X @ theta - y) + penalty)
             change = (-1 * self.eta * grad) + momentum
             theta += change
+            if (np.linalg.norm(grad) < self.atol):
+                break
 
         return theta
 
@@ -39,6 +88,8 @@ class GD:
             weights = self.eta / (delta + np.sqrt(r))
             change = (-1 * weights * grad) + momentum
             theta += change
+            if (np.linalg.norm(grad) < self.atol):
+                break
 
         return theta
 
@@ -57,6 +108,8 @@ class GD:
             weights = self.eta / np.sqrt(delta + r)
             change = (-1 * weights * grad) + momentum
             theta += change
+            if (np.linalg.norm(grad) < self.atol):
+                break
 
         return theta
 
@@ -81,5 +134,7 @@ class GD:
             change = -1 * self.eta * s_hat / (np.sqrt(r_hat) + delta)
             # change = (-1 * weights * grad) + momentum
             theta += change
+            if (np.linalg.norm(grad) < self.atol):
+                break
 
         return theta
