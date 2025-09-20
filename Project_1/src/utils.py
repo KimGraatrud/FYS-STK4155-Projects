@@ -20,3 +20,10 @@ def poly_features(x, d, intercept=False):
     orders = np.arange(lowest, d + 1)
     exp, base = np.meshgrid(orders, x)
     return base**exp
+
+
+def runge(x):
+    return 1 / (1 + 25 * x**2)
+
+
+FIGURES_URL = "./figures/"
