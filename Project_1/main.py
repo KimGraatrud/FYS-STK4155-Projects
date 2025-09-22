@@ -12,4 +12,5 @@ plt.rcParams.update(
 
 # A.main()
 # B.main()
-C.main()
+# C.main()
+C.eta_n_relationship()

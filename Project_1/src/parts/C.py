@@ -13,7 +13,7 @@ def fit_grad(x, y, d, **grad_kwargs):
     return descender.Grad(X, y)
 
 
-def main():
+def heatmap():
     n = 1e3
     x, y = create_data(n)
     x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8)
@@ -25,13 +25,12 @@ def main():
 
     mse_diffs = np.zeros_like(ds, dtype=np.float64)
 
-    n_iterations = 1e3
+    n_iterations = 1e3  # number of iterations to run each grad. descent for
 
     for i, d in enumerate(degrees):
         X_test = utils.poly_features(x_test, d, intercept=True)
 
-        theta_ridge = fit_ridge(x_train, y_train, d, 0)
-        # theta_ridge = fit_ridge(x_train, y_train, d, 1e-3)
+        theta_ridge = fit_ridge(x_train, y_train, d, 0)  # OLS
         pred_ridge = X_test @ theta_ridge
         mse_ridge = utils.MSE(y_test, pred_ridge)
 
@@ -59,23 +58,65 @@ def main():
         shading="nearest",
         cmap=plt.colormaps["bone"].reversed(),
     )
+    fig.colorbar(cf, label=r"$\mathrm{MSE}_{\nabla} - \mathrm{MSE}_\mathrm{OLS}$")
 
     ax.set_yscale("log")
 
-    ax.set_title(
-        r"Diff. in MSE between $\nabla$-descent and OLS,"
-        + f"{n_iterations:.0f} iterations",
-    )
     ax.set_ylabel(r"learning rate $\eta$")
     ax.set_xlabel(r"polynomial degree")
-
-    fig.colorbar(cf, label=r"$\mathrm{MSE}_{\nabla} - \mathrm{MSE}_\mathrm{OLS}$")
+    ax.set_title(
+        r"Diff. in MSE between $\nabla$-descent and OLS, "
+        + f"{n_iterations:.0f} iterations",
+    )
 
     fig.savefig(os.path.join(utils.FIGURES_URL, "c_heatmap"))
     plt.close()
 
-    # pred_b
-    # print(theta_ridge - theta_grad)
+
+def eta_n_relationship():
+    # This should really be used to compare models. Useless on its own
+
+    degree = 4  # arbitrary
+    max_n = 1e6  # maximum number of iterations
+    atol = 1e-3
+    # atol = 1e-8
+
+    n_data = 1e2
+    x, y = create_data(n_data)
+
+    etas = np.logspace(-3, -0.1, 20)  # learning rates
+    ns = np.zeros_like(etas)  # number of iterations before stopping
+
+    gd = ml.GD(n_iterations=max_n, atol=atol)
+    # gd = ml.GD(n_iterations=max_n, atol=atol, mass=1)
+
+    X = utils.poly_features(x, degree, intercept=True)
+
+    for i, eta in enumerate(etas):
+        gd.eta = eta
+        _, stats = gd.Grad(X, y, full_output=True)
+        ns[i] = stats["n"]
+
+    fig, ax = plt.subplots()
+    ax.plot(etas, ns)
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+
+    ax.set_xlabel(r"Learning rate $\eta$")
+    ax.set_ylabel(r"Iterations before stopping")
+
+    ax.set_title(
+        r"Iterations vs. Learning Rate for $\nabla$-Descent of Degree 4 Polynomial"
+    )
+
+    fig.savefig(os.path.join(utils.FIGURES_URL, "c_eta_n_rel"))
+    plt.close()
+
+
+def main():
+    heatmap()
+    eta_n_relationship()
 
 
 if __name__ == "__main__":

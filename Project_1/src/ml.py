@@ -29,11 +29,12 @@ class GD:
     >>> y_hat = X @ theta
 
     Bsed on what you initialise the penalty and mass to be you can also do OLS with/without momentum or Ridge regresssion with/without momentum, like so
-    
+
     >>> GradientDecent_Ridge_no_momentum = GD(eta, n_iterations, .001, .3)
     >>> theta = GradientDecent_Ridge_no_momentum.Grad(X,y)
     >>> y_hat = X @ theta
     """
+
     def __init__(self, eta=1e-3, n_iterations=1e5, lamb=0, mass=0, atol=1e-8):
         self.set_niterations(n_iterations)
         self.eta = eta
@@ -54,23 +55,28 @@ class GD:
         """
         self.n = int(np.round(n))
 
-    def Grad(self, X, y):
+    def Grad(self, X, y, full_output=False):
         """
         Gradient decent method that does both OLS and Ridge based on the choice of lamb and mass in the constructor.
 
-        See the documentation for the whole class for a usage guide. 
+        See the documentation for the whole class for a usage guide.
         """
         theta = np.zeros(X.shape[1])
         change = np.zeros_like(theta)
 
-        for _ in range(self.n):
+        for i in range(self.n):
             penalty = self.lamb * theta
             momentum = self.mass * change
             grad = 2 * ((1 / y.shape[0]) * X.T @ (X @ theta - y) + penalty)
             change = (-1 * self.eta * grad) + momentum
             theta += change
-            if (np.linalg.norm(grad) < self.atol):
+            if np.linalg.norm(grad) < self.atol:
                 break
+
+        # if full output, include the number of iterations
+        if full_output:
+            stats = {"n": i}
+            return theta, stats
 
         return theta
 
@@ -88,7 +94,7 @@ class GD:
             weights = self.eta / (delta + np.sqrt(r))
             change = (-1 * weights * grad) + momentum
             theta += change
-            if (np.linalg.norm(grad) < self.atol):
+            if np.linalg.norm(grad) < self.atol:
                 break
 
         return theta
@@ -108,7 +114,7 @@ class GD:
             weights = self.eta / np.sqrt(delta + r)
             change = (-1 * weights * grad) + momentum
             theta += change
-            if (np.linalg.norm(grad) < self.atol):
+            if np.linalg.norm(grad) < self.atol:
                 break
 
         return theta
@@ -134,7 +140,7 @@ class GD:
             change = -1 * self.eta * s_hat / (np.sqrt(r_hat) + delta)
             # change = (-1 * weights * grad) + momentum
             theta += change
-            if (np.linalg.norm(grad) < self.atol):
+            if np.linalg.norm(grad) < self.atol:
                 break
 
         return theta
