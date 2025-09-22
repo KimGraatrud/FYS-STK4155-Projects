@@ -35,12 +35,15 @@ class GD:
     >>> y_hat = X @ theta
     """
 
-    def __init__(self, eta=1e-3, n_iterations=1e5, lamb=0, mass=0, atol=1e-8):
+    def __init__(
+        self, eta=1e-3, n_iterations=1e5, lamb=0, mass=0, atol=1e-8, full_output=False
+    ):
         self.set_niterations(n_iterations)
         self.eta = eta
         self.mass = mass
         self.atol = atol
         self.lamb = lamb
+        self.full_output = full_output
 
     def set_niterations(self, n):
         """
@@ -55,7 +58,7 @@ class GD:
         """
         self.n = int(np.round(n))
 
-    def Grad(self, X, y, full_output=False):
+    def Grad(self, X, y):
         """
         Gradient decent method that does both OLS and Ridge based on the choice of lamb and mass in the constructor.
 
@@ -64,18 +67,23 @@ class GD:
         theta = np.zeros(X.shape[1])
         change = np.zeros_like(theta)
 
+        record = []  # recording of parameters at each step of the gradient descent
+
         for i in range(self.n):
             penalty = self.lamb * theta
             momentum = self.mass * change
             grad = 2 * ((1 / y.shape[0]) * X.T @ (X @ theta - y) + penalty)
             change = (-1 * self.eta * grad) + momentum
             theta += change
-            if np.linalg.norm(grad) < self.atol:
+
+            if self.full_output:
+                record.append(np.copy(theta))
+
+            if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
                 break
 
-        # if full output, include the number of iterations
-        if full_output:
-            stats = {"n": i}
+        if self.full_output:
+            stats = {"n": i + 1, "record": np.array(record)}
             return theta, stats
 
         return theta
@@ -85,7 +93,9 @@ class GD:
         change = np.zeros_like(theta)
         r = np.zeros_like(theta)
 
-        for _ in range(self.n):
+        record = []
+
+        for i in range(self.n):
             penalty = self.lamb * theta
             momentum = self.mass * change
 
@@ -94,8 +104,16 @@ class GD:
             weights = self.eta / (delta + np.sqrt(r))
             change = (-1 * weights * grad) + momentum
             theta += change
-            if np.linalg.norm(grad) < self.atol:
+
+            if self.full_output:
+                record.append(np.copy(theta))
+
+            if (self.atol is not None) and (np.linalg.norm(grad) < self.atol):
                 break
+
+        if self.full_output:
+            stats = {"n": i + 1, "record": np.array(record)}
+            return theta, stats
 
         return theta
 
@@ -103,6 +121,8 @@ class GD:
         theta = np.zeros(X.shape[1])
         change = np.zeros_like(theta)
         r = np.zeros_like(theta)
+
+        record = []
 
         for i in range(self.n):
             penalty = self.lamb * theta
@@ -114,8 +134,16 @@ class GD:
             weights = self.eta / np.sqrt(delta + r)
             change = (-1 * weights * grad) + momentum
             theta += change
-            if np.linalg.norm(grad) < self.atol:
+
+            if self.full_output:
+                record.append(np.copy(theta))
+
+            if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
                 break
+
+        if self.full_output:
+            stats = {"n": i + 1, "record": np.array(record)}
+            return theta, stats
 
         return theta
 
@@ -124,6 +152,8 @@ class GD:
         change = np.zeros_like(theta)
         s = np.zeros_like(theta)  # first moment estimates
         r = np.zeros_like(theta)  # second moment estimates
+
+        record = []
 
         for i in range(self.n):
             penalty = self.lamb * theta
@@ -140,7 +170,15 @@ class GD:
             change = -1 * self.eta * s_hat / (np.sqrt(r_hat) + delta)
             # change = (-1 * weights * grad) + momentum
             theta += change
-            if np.linalg.norm(grad) < self.atol:
+
+            if self.full_output:
+                record.append(np.copy(theta))
+
+            if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
                 break
+
+        if self.full_output:
+            stats = {"n": i + 1, "record": np.array(record)}
+            return theta, stats
 
         return theta

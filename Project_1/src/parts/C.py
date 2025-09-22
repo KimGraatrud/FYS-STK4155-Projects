@@ -14,6 +14,9 @@ def fit_grad(x, y, d, **grad_kwargs):
 
 
 def heatmap():
+    """
+    Creates Figure tk.tk
+    """
     n = 1e3
     x, y = create_data(n)
     x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8)
@@ -87,14 +90,14 @@ def eta_n_relationship():
     etas = np.logspace(-3, -0.1, 20)  # learning rates
     ns = np.zeros_like(etas)  # number of iterations before stopping
 
-    gd = ml.GD(n_iterations=max_n, atol=atol)
+    gd = ml.GD(n_iterations=max_n, atol=atol, full_output=True)
     # gd = ml.GD(n_iterations=max_n, atol=atol, mass=1)
 
     X = utils.poly_features(x, degree, intercept=True)
 
     for i, eta in enumerate(etas):
         gd.eta = eta
-        _, stats = gd.Grad(X, y, full_output=True)
+        _, stats = gd.Grad(X, y)
         ns[i] = stats["n"]
 
     fig, ax = plt.subplots()
