@@ -1,84 +1,172 @@
 import os
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 from .A import create_data
 from .. import ml, utils, regression
 
 
-def compare_all():
+# calculate the MSEs from a record of parameters
+def MSE_from_record(X, y, record):
+    preds = record @ X.T
+    return np.array([utils.MSE(y, p) for p in preds])
+
+
+# Not worth it for
+# - Adagrad: the small constant is just for numerical stability
+
+
+def setup_comparison():
     degree = 5
     n_max = 2e4  # iterations
 
     N = 1e2
     x, y = create_data(N)
-
-    gd = ml.GD(
-        full_output=True, eta=1e-1, atol=None, n_iterations=n_max
-    )  # atol=None forces it to run all iterations
-
     X = utils.poly_features(x, degree, intercept=True)
+
+    gd = ml.GD(full_output=True, eta=1e-1, atol=None, n_iterations=n_max)
 
     fig, ax = plt.subplots()
 
-    # calculate the MSEs from a record of parameters
-    def MSE_from_record(record):
-        preds = record @ X.T
-        return np.array([utils.MSE(y, p) for p in preds])
+    # optimal
+    theta = regression.OLS(X, y)
+    MSE_best = utils.MSE(y, X @ theta)
+    ax.axhline(MSE_best, ls="--", label="OLS analytical soln.", c="k", lw=1)
 
     # OLS
     _, stats = gd.Grad(X, y)
-    MSE_ols = MSE_from_record(stats["record"])
-    it = np.arange(MSE_ols.shape[0])
-    ax.plot(it, MSE_ols, label="OLS")
+    MSE_ols = MSE_from_record(X, y, stats["record"])
+    ax.plot(MSE_ols, label="OLS")
 
-    # Ridge
-    gd.lamb = 1e-2
-    _, stats = gd.Grad(X, y)
-    MSE_ridge = MSE_from_record(stats["record"])
-    ax.plot(it, MSE_ridge, label="Ridge")
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Training MSE")
+
+    ax.set_xscale("log")
+
+    ax.set_ylim(MSE_best - 0.005, 0.13)
+    ax.set_xlim(1, n_max)
+
+    return fig, ax, X, y, gd
+
+
+def compare_rms():
+    fig, ax, X, y, gd = setup_comparison()
+
+    cmap = plt.colormaps["Reds"]
+    norm = mpl.colors.Normalize(vmin=0.5, vmax=1.2)
+
+    # RMSGrad
+    decay = np.array([0.7, 0.9, 0.99])
+    for d in decay:
+        _, stats = gd.RMSGrad(X, y, 1e-7, d)
+        MSE = MSE_from_record(X, y, stats["record"])
+        label = r"$\rho = " + f"{d}$"
+        ax.plot(MSE, label=label, c=cmap(norm(d)))
+
+    ax.set_title("RMSGrad instability")
+
+    ax.legend()
+
+    fig.savefig(os.path.join(utils.FIGURES_URL, "d_rms"))
+    plt.close()
+
+
+def compare_adam():
+    fig, ax, X, y, gd = setup_comparison()
+
+    cmap = plt.colormaps["Purples"]
+    norm = mpl.colors.Normalize(vmin=0.5, vmax=1.2)
+
+    # ADAM
+    decay_1 = np.array([0.7, 0.9, 0.99])
+    d2 = 0.99
+    for d1 in decay_1:
+        _, stats = gd.ADAM(X, y, 1e-7, d1, d2)
+        MSE = MSE_from_record(X, y, stats["record"])
+        label = r"$\rho_1 = " + f"{d1}" + r"$, $\rho_2 = " + f"{d2}$"
+        ax.plot(MSE, label=label, c=cmap(norm(d1)))
+
+    d1 = 0.9
+    decay_2 = np.array([0.7, 0.999])
+    lss = ["--", "-."]
+    for d2, ls in zip(decay_2, lss):
+        _, stats = gd.ADAM(X, y, 1e-7, d1, d2)
+        MSE = MSE_from_record(X, y, stats["record"])
+        label = r"$\rho_1 = " + f"{d1}" + r"$, $\rho_2 = " + f"{d2}$"
+        ax.plot(MSE, label=label, ls=ls, c=cmap(norm(d1)))
+
+    ax.set_title("ADAM behavior for different parameters")
+    ax.legend()
+    fig.savefig(os.path.join(utils.FIGURES_URL, "d_adam"))
+    plt.close()
+
+
+def compare_momentum():
+    fig, ax, X, y, gd = setup_comparison()
+
+    masses = np.array([0.1, 0.5, 0.8, 0.92])
+
+    cmap = plt.colormaps["Oranges"]
+    norm = mpl.colors.Normalize(vmin=-0.5, vmax=1.5)
+
+    for m in masses:
+        # OLS w/ momentum
+        gd.lamb = 0
+        gd.mass = m
+        _, stats = gd.Grad(X, y)
+        MSE_mntm = MSE_from_record(X, y, stats["record"])
+        ax.plot(MSE_mntm, label=f"mass = {m}", c=cmap(norm(m)))
+
+    ax.set_title("OLS descent w/ momentum")
+    ax.legend()
+    fig.savefig(os.path.join(utils.FIGURES_URL, "d_mass"))
+    plt.close()
+
+
+def compare_all():
+    fig, ax, X, y, gd = setup_comparison()
 
     # OLS w/ momentum
     gd.lamb = 0
     gd.mass = 0.2
     _, stats = gd.Grad(X, y)
-    MSE_mntm = MSE_from_record(stats["record"])
-    ax.plot(it, MSE_mntm, label="OLS w/ momentum")
+    MSE_mntm = MSE_from_record(X, y, stats["record"])
+    ax.plot(MSE_mntm, label="OLS w/ momentum")
+
+    # Ridge
+    gd.lamb = 1e-2
+    gd.mass = 0
+    _, stats = gd.Grad(X, y)
+    MSE_ridge = MSE_from_record(X, y, stats["record"])
+    ax.plot(MSE_ridge, label="Ridge")
+
+    # RMS
+    gd.lamb = 0
+    decay = 0.99
+    delta = 1e-7
+    _, stats = gd.RMSGrad(X, y, delta, decay)
+    MSE_rms = MSE_from_record(X, y, stats["record"])
+    # break the RMS plot into stable and unstable
+    it = np.arange(MSE_rms.shape[0])
+    stable = it < 1.5e2
+    rms_color = "#d43b38"
+    ax.plot(it[stable], MSE_rms[stable], label="RMSGrad", c=rms_color, zorder=0)
+    ax.plot(it[~stable], MSE_rms[~stable], c=rms_color, lw=1, zorder=0)
 
     # ADAGrad
     gd.mass = 0
-    delta = 1e-7
     _, stats = gd.AdaGrad(X, y, delta=delta)
-    MSE_ada = MSE_from_record(stats["record"])
-    ax.plot(it, MSE_ada, label="ADAGrad")
-
-    # RMS
-    decay = 0.99
-    _, stats = gd.RMSGrad(X, y, delta, decay)
-    MSE_rms = MSE_from_record(stats["record"])
-    ax.plot(it, MSE_rms, label="RMSGrad")
+    MSE_ada = MSE_from_record(X, y, stats["record"])
+    ax.plot(MSE_ada, label="ADAGrad", c="peru")
 
     # ADAM
     decay_1 = 0.9
     decay_2 = 0.9
     delta = 1e-8
     _, stats = gd.ADAM(X, y, delta, decay_1, decay_2)
-    MSE_adam = MSE_from_record(stats["record"])
-    ax.plot(it, MSE_adam, label="ADAM")
+    MSE_adam = MSE_from_record(X, y, stats["record"])
+    ax.plot(MSE_adam, label="ADAM", c="mediumpurple")
 
-    ax.set_xscale("log")
-    # ax.set_yscale("symlog", linthresh=0.1)
-    # ax.set_xscale("symlog", linthresh=100)
-
-    # optimal
-    theta = regression.OLS(X, y)
-    MSE_best = utils.MSE(y, X @ theta)
-    ax.axhline(MSE_best, ls="--", label="Optimal (OLS analytical soln.)")
-
-    ax.set_ybound(MSE_best - 0.005, 0.15)
-    ax.set_xbound(1, n_max)
-
-    ax.set_xlabel("Iteration")
-    ax.set_ylabel("Training MSE")
     ax.set_title("MSE during descent, various methods")
 
     ax.legend()
@@ -89,6 +177,9 @@ def compare_all():
 
 def main():
     compare_all()
+    compare_adam()
+    compare_rms()
+    compare_momentum()
 
 
 if __name__ == "__main__":

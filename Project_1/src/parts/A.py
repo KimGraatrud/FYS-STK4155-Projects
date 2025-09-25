@@ -6,12 +6,14 @@ import matplotlib as mpl
 from .. import utils
 from .. import regression
 
+rng = np.random.default_rng(seed=1000)
+
 
 def create_data(n):
     # create data
     x = np.linspace(-1, 1, np.int32(n))
     y_base = utils.runge(x)
-    noise = 0.05 * np.random.normal(size=x.shape[0])
+    noise = 0.05 * rng.normal(size=x.shape[0])
     y = y_base + noise
 
     return x, y

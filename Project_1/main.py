@@ -6,6 +6,9 @@ plt.rcParams.update(
         "figure.dpi": 600,
         "figure.constrained_layout.use": True,
         "legend.scatterpoints": 4,
+        "axes.grid": "True",
+        "grid.color": "black",
+        "grid.alpha": 0.03,
         # "savefig.format": "svg",
     }
 )
