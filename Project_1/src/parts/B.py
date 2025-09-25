@@ -90,6 +90,14 @@ def heatmap():
     ax.set_title("$R^2$")
     ax.set_xlabel("Polynomial degree")
 
+    fig.subplots_adjust(
+        left=0.0,   # no margin on the left
+        right=1.0,  # no margin on the right
+        top=0.9,    # leave some space at the top
+        bottom=0.1  # leave some space at the bottom
+    )
+
+
     # title & save
     fig.suptitle(f"Polynomial Ridge Regression on $n={x_train.shape[0]}$ points")
     fig.savefig(os.path.join(utils.FIGURES_URL, "b_heatmap"))
