@@ -13,8 +13,10 @@ class GD:
         Learning rate.
     n_iterations : int, default=1e5
         Maximum number of iterations.
-    lamb : float, default=0
+    lamb_R : float, default=0
         L2 regularization coefficient (ridge).
+    lamb_L : float, default=0
+        L2 regularization coefficient (lasso).
     mass : float, default=0
         Momentum factor.
     atol : float, default=1e-8 lamb, mass, atol
@@ -182,3 +184,26 @@ class GD:
             return theta, stats
 
         return theta
+
+    def LassoRegression(self, X, y):
+        n = y.shape[0]
+        theta = np.zeros(X.shape[1])
+        change = np.zeros_like(theta)
+
+        for _ in range(self.n):
+            grad = ((1 / n) * X.T @ (X @ theta - y)) + self.lmbda * np.sign(theta)
+            z = theta + (-1 * self.eta * grad)
+            theta = np.sign(z) * np.maximum((np.abs(z) - self.eta * self.lmbda), 0)
+            if np.linalg.norm(grad) < self.atol:
+                break
+
+        return theta
+
+    # def StochasticGD(X: np.ndarray,
+    #                  y: np.ndarray,
+    #                  batchsize: int)
+
+    #     n = y.size[0]
+    #     m = int(n/batchsize)
+
+    #     for i in range(self.n)
