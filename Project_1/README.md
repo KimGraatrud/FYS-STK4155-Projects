@@ -2,7 +2,6 @@
 
 This is the repo contains all the code used to generate the results for our report.
 
----
 
 ## Structure
 
@@ -23,7 +22,6 @@ Our repository has the following structure:
 - `doc/` contains the paper in .pdf format and the figures used for it in `figures/`
 - `readme.md` is this file.
 
----
 
 ## Installation
 
@@ -33,14 +31,11 @@ git clone https://github.com/username/repo-name.git
 cd repo-name
 ```
 
----
 
 ## Dependencies
 - Numpy
 - Matplotlib
 - scikit-learn
-
-To install these dependencies use either `pip`, `Anaconda` or your favorite packagemanager. For `pip` you would run `pip install numpy matplotlib scikit-learn` or equivalently in `Anaconda`.
 
 To install with pip:
 ```bash
