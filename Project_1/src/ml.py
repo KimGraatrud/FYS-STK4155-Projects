@@ -212,11 +212,116 @@ class GD:
 
         return theta
 
-    # def StochasticGD(X: np.ndarray,
-    #                  y: np.ndarray,
-    #                  batchsize: int)
+    def _learning_schedule(self, t):
+        """
+        Helper for StochasticGD method.
 
-    #     n = y.size[0]
-    #     m = int(n/batchsize)
+        Updates the learning rate for SGD dynamically.
+        """
+        t0, t1 = 5, 10
+        return t0/(t+t1)
 
-    #     for i in range(self.n)
+
+    def example_SGD(self,
+                    X: np.ndarray,
+                    y: np.ndarray,
+                    M: int) -> np.ndarray:
+
+        """
+        SGD method from the Lecture notes from week 37.
+        """
+
+        n, p = X.shape
+        theta = np.zeros(p, dtype=float)
+        change = np.zeros_like(theta)
+        epochs = self.n
+        m = int(n/M)
+
+        j=0
+        for epoch in range(epochs):
+            for i in range(m):
+
+                penalty = self.lamb * theta
+                momentum = self.mass * change
+
+
+                index = M * np.random.randint(m)
+
+                xi = X[index:index + M]
+                yi = y[index:index + M]
+
+                grad = (2 / length) * Xi.T @ (Xi @ theta - yi) + penalty
+                eta = self._learning_schedule(j)
+                change = (-1 * eta * grad) + momentum
+                theta += change
+                j += 1
+
+                if self.full_output:
+                    record.append(np.copy(theta))
+
+
+                if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
+                    break
+            
+        if self.full_output:
+            stats = {"n": j + 1, "record": np.array(record)}
+            return theta, stats
+
+        return theta
+
+
+    def StochasticGD(self,
+                     X: np.ndarray,
+                     y: np.ndarray,
+                     batchsize: int,
+                     shuffle: bool=False
+                     ) -> np.ndarray:
+        """
+        Improved SGD method from the Lecture notes from week 37.
+
+        Computes the optimal coefficients theta using stochastical gradient decent.
+        """
+
+
+        n, p = X.shape
+        theta = np.zeros(p, dtype=float)
+        change = np.zeros_like(theta)
+        epochs = self.n
+        m = int(n/batchsize)
+
+        record = []  # recording of parameters at each step of the gradient descent
+
+        j = 0   # Global step param
+        for epoch in range(epochs):
+
+            # Check if we shuffle the indecies
+            perm = np.random.permutation(n) if shuffle else np.arange(n)
+
+            for i in range(0, m, batchsize):
+                penalty = self.lamb * theta
+                momentum = self.mass * change
+
+                indexes = perm[i: i+batchsize]
+                length  = len(indexes)
+
+                Xi = X[indexes]
+                yi = y[indexes]
+
+                grad = (2 / length) * Xi.T @ (Xi @ theta - yi) + penalty
+                eta = self._learning_schedule(j)
+                change = (-1 * eta * grad) + momentum
+                theta += change
+                j += 1
+
+                if self.full_output:
+                    record.append(np.copy(theta))
+
+
+                if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
+                    break
+
+        if self.full_output:
+            stats = {"n": j + 1, "record": np.array(record)}
+            return theta, stats
+
+        return theta
