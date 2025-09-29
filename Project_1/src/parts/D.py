@@ -26,12 +26,17 @@ def setup_comparison():
 
     gd = ml.GD(full_output=True, eta=1e-1, atol=None, n_iterations=n_max)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W))
 
     # optimal
     theta = regression.OLS(X, y)
     MSE_best = utils.MSE(y, X @ theta)
-    ax.axhline(MSE_best, ls="--", label="OLS analytical soln.", c="k", lw=1)
+    ax.axhline(
+        MSE_best,
+        ls="--",
+        label="OLS analytical soln.",
+        c="k",
+    )
 
     # OLS
     _, stats = gd.Grad(X, y)
@@ -63,10 +68,9 @@ def compare_rms():
         label = r"$\rho = " + f"{d}$"
         ax.plot(MSE, label=label, c=cmap(norm(d)))
 
-    ax.set_title("RMSGrad instability")
-
-    ax.legend()
-
+    ax.set_title("RMSProp")
+    fig.legend(loc="outside lower center", ncols=2, frameon=False)
+    fig.set_figheight(0.9 * utils.APS_COL_W)
     fig.savefig(os.path.join(utils.FIGURES_URL, "d_rms"))
     plt.close()
 
@@ -95,8 +99,9 @@ def compare_adam():
         label = r"$\rho_1 = " + f"{d1}" + r"$, $\rho_2 = " + f"{d2}$"
         ax.plot(MSE, label=label, ls=ls, c=cmap(norm(d1)))
 
-    ax.set_title("ADAM behavior for different parameters")
-    ax.legend()
+    ax.set_title("ADAM")
+    fig.legend(loc="outside lower center", ncols=2, frameon=False)
+    fig.set_figheight(0.97 * utils.APS_COL_W)
     fig.savefig(os.path.join(utils.FIGURES_URL, "d_adam"))
     plt.close()
 
@@ -117,9 +122,41 @@ def compare_momentum():
         MSE_mntm = MSE_from_record(X, y, stats["record"])
         ax.plot(MSE_mntm, label=f"mass = {m}", c=cmap(norm(m)))
 
-    ax.set_title("OLS descent w/ momentum")
-    ax.legend()
+    ax.set_title("OLS + Momentum")
+    fig.legend(loc="outside lower center", ncols=2, frameon=False)
+    fig.set_figheight(0.9 * utils.APS_COL_W)
     fig.savefig(os.path.join(utils.FIGURES_URL, "d_mass"))
+    plt.close()
+
+
+def compare_lasso():
+    fig, ax, X, y, gd = setup_comparison()
+
+    l_min = -5
+    l_max = -1
+    lambs = np.logspace(l_min, l_max, 5)
+
+    cmap = plt.colormaps["YlGn"]
+    norm = mpl.colors.Normalize(vmin=l_min - 3, vmax=l_max)
+
+    # Ridge for comparison
+    gd.lamb = 1e-2
+    _, stats = gd.Grad(X, y)
+    MSE_ridge = MSE_from_record(X, y, stats["record"])
+    ax.plot(MSE_ridge, label=r"Ridge, $\lambda=10^" + f"{{{np.log10(gd.lamb):.0f}}}$")
+
+    # Lasso
+    for l in lambs:
+        gd.lamb = l
+        _, stats = gd.Lasso(X, y)
+        MSE_lasso = MSE_from_record(X, y, stats["record"])
+        label = r"$\lambda=" + f"10^{{{np.log10(l):.0f}}}$"
+        ax.plot(MSE_lasso, label=label, c=cmap(norm(np.log10(l))))
+
+    ax.set_title("Lasso")
+    fig.legend(loc="outside lower center", ncols=2, frameon=False)
+    fig.set_figheight(0.97 * utils.APS_COL_W)
+    fig.savefig(os.path.join(utils.FIGURES_URL, "d_lasso"))
     plt.close()
 
 
@@ -131,7 +168,7 @@ def compare_all():
     gd.mass = 0.2
     _, stats = gd.Grad(X, y)
     MSE_mntm = MSE_from_record(X, y, stats["record"])
-    ax.plot(MSE_mntm, label="OLS w/ momentum")
+    ax.plot(MSE_mntm, label="OLS + momentum")
 
     # Ridge
     gd.lamb = 1e-2
@@ -150,8 +187,8 @@ def compare_all():
     it = np.arange(MSE_rms.shape[0])
     stable = it < 1.5e2
     rms_color = "#d43b38"
-    ax.plot(it[stable], MSE_rms[stable], label="RMSGrad", c=rms_color, zorder=0)
-    ax.plot(it[~stable], MSE_rms[~stable], c=rms_color, lw=1, zorder=0)
+    ax.plot(it[stable], MSE_rms[stable], label="RMSProp", c=rms_color, zorder=0)
+    ax.plot(it[~stable], MSE_rms[~stable], c=rms_color, lw=0.3, zorder=0)
 
     # ADAGrad
     gd.mass = 0
@@ -167,19 +204,24 @@ def compare_all():
     MSE_adam = MSE_from_record(X, y, stats["record"])
     ax.plot(MSE_adam, label="ADAM", c="mediumpurple")
 
+    # Lasso
+    _, stats = gd.Lasso(X, y)
+    MSE_lasso = MSE_from_record(X, y, stats["record"])
+    ax.plot(MSE_lasso, label="Lasso", c="yellowgreen")
+
     ax.set_title("MSE during descent, various methods")
-
-    ax.legend()
-
+    fig.legend(loc="outside lower center", ncols=2, frameon=False)
+    fig.set_figheight(0.97 * utils.APS_COL_W)
     fig.savefig(os.path.join(utils.FIGURES_URL, "d"))
     plt.close()
 
 
 def main():
+    compare_momentum()
     compare_all()
     compare_adam()
     compare_rms()
-    compare_momentum()
+    compare_lasso()
 
 
 if __name__ == "__main__":

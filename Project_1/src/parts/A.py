@@ -6,7 +6,7 @@ import matplotlib as mpl
 from .. import utils
 from .. import regression
 
-rng = np.random.default_rng(seed=1000)
+rng = np.random.default_rng(seed=utils.RANDOM_SEED)
 
 
 def create_data(n):
@@ -15,6 +15,8 @@ def create_data(n):
     y_base = utils.runge(x)
     noise = 0.05 * rng.normal(size=x.shape[0])
     y = y_base + noise
+
+    # scale data
 
     return x, y
 
@@ -27,7 +29,9 @@ def fit_OLS(x, y, d):
 def heatmap():
     n = 1e4
     x, y = create_data(n)
-    x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8)
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, train_size=0.8, random_state=utils.RANDOM_SEED
+    )
 
     degrees = np.arange(1, 15)
     fracs = np.logspace(-3, 0, 40)
@@ -63,7 +67,12 @@ def heatmap():
     r2[r2 < 0] = np.nan
 
     # ------------ Plot it all -------------
-    fig, axs = plt.subplots(ncols=2, sharey=True, figsize=(8, 3))
+    fig, axs = plt.subplots(
+        nrows=2,
+        sharex=True,
+        sharey=True,
+        figsize=(utils.APS_COL_W, 1.5 * utils.APS_COL_W),
+    )
 
     # MSE
     ax = axs[0]
@@ -83,8 +92,8 @@ def heatmap():
     fig.colorbar(cf)
 
     ax.set_yscale("log")
-    ax.set_ylabel("Number of points")
-    ax.set_xlabel("Polynomial degree")
+    ax.set_ylabel("Number of points ($n$)")
+    # ax.set_xlabel("Polynomial degree")
     ax.set_title("MSE")
 
     # R squared
@@ -105,29 +114,32 @@ def heatmap():
     fig.colorbar(cf)
 
     ax.set_title("$R^2$")
-    ax.set_xlabel("Polynomial degree")
+    ax.set_xlabel("Polynomial degree ($N$)")
+    ax.set_ylabel("Number of points ($n$)")
 
     # title & save
-    fig.suptitle("OLS polynomial fitting")
+    fig.suptitle("MSE and $R^2$ for OLS Regression")
     fig.savefig(os.path.join(utils.FIGURES_URL, "a_heatmap"))
     plt.close()
 
 
 def example():
-    n = 1e4
+    n = 1e2
     x, y = create_data(n)
-    x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8)
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, train_size=0.8, random_state=utils.RANDOM_SEED
+    )
 
-    fig, ax = plt.subplots(figsize=(5.5, 3.5))
+    fig, ax = plt.subplots(figsize=(utils.APS_COL_W, utils.APS_COL_W))
 
-    i = 80  # only train on every 80th point
-    x_sample = x_train[::i]
-    y_sample = y_train[::i]
+    # i = 80  # only train on every 80th point
+    # x_sample = x_train[::i]
+    # y_sample = y_train[::i]
 
     # plot the underlying data
     c = "k"
-    ax.scatter(x, y, s=0.1, alpha=0.1, c=c)
-    ax.scatter(x_sample, y_sample, s=1.2, c=c, label="Training points")
+    # ax.scatter(x, y, s=1, alpha=0.5, c=c)
+    ax.scatter(x_train, y_train, s=1.2, c=c, label="training data")
 
     n_deg = 12  # number of degrees to plot
 
@@ -138,21 +150,27 @@ def example():
     # fit to various degrees
     degrees = np.arange(1, n_deg + 1)
     for d in degrees:
-        theta = fit_OLS(x_sample, y_sample, d)
+        theta = fit_OLS(x_train, y_train, d)
 
         X = utils.poly_features(x, d, intercept=True)
 
-        ax.plot(x, X @ theta, c=cmap(norm(d)), lw=1)
+        ax.plot(x, X @ theta, c=cmap(norm(d)), lw=0.6)
 
     fig.colorbar(
-        mpl.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, label="Polynomial degree"
+        mpl.cm.ScalarMappable(cmap=cmap, norm=norm),
+        ax=ax,
+        label="Polynomial Degree ($N$)",
+        location="bottom",
     )
+
+    ax.axhline(0, c="k", lw=0.1)
+    ax.axvline(0, c="k", lw=0.1)
 
     ax.legend()
     ax.set_xlabel("$x$")
     ax.set_ylabel("$y$")
 
-    fig.suptitle("Polynomial OLS fits")
+    ax.set_title(r"OLS Predictions for Various $N$")
     fig.savefig(os.path.join(utils.FIGURES_URL, "a_example"))
 
 

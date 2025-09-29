@@ -46,32 +46,10 @@ def heatmap():
     r2[r2 < 0] = np.nan
 
     # ------------ Plot it all -------------
-    fig, axs = plt.subplots(ncols=2, sharey=True, figsize=(8, 3))
-
-    # MSE
-    ax = axs[0]
-    cmap_mse = plt.colormaps["viridis"]
-    cmap_mse.set_bad(color="dimgray")
-
-    cf = ax.pcolormesh(
-        ds,
-        ls,
-        mse,
-        shading="nearest",
-        cmap=cmap_mse,
-        vmin=0,
-        vmax=0.1,
-    )
-
-    fig.colorbar(cf)
-
-    ax.set_yscale("log")
-    ax.set_ylabel(r"$\lambda$")
-    ax.set_xlabel("Polynomial degree")
-    ax.set_title("MSE")
+    fig, axs = plt.subplots(figsize=(utils.APS_COL_W, 0.75 * utils.APS_COL_W))
 
     # R squared
-    ax = axs[1]
+    ax = axs
     cmap_r2 = plt.colormaps["plasma"]
     cmap_r2.set_bad(color="dimgray")
 
@@ -87,19 +65,11 @@ def heatmap():
 
     fig.colorbar(cf)
 
-    ax.set_title("$R^2$")
-    ax.set_xlabel("Polynomial degree")
+    ax.set_title("$R^2$, Ridge Regression")
+    ax.set_xlabel("Polynomial degree ($N$)")
+    ax.set_yscale("log")
+    ax.set_ylabel(r"$\lambda$")
 
-    fig.subplots_adjust(
-        left=0.0,   # no margin on the left
-        right=1.0,  # no margin on the right
-        top=0.9,    # leave some space at the top
-        bottom=0.1  # leave some space at the bottom
-    )
-
-
-    # title & save
-    fig.suptitle(f"Polynomial Ridge Regression on $n={x_train.shape[0]}$ points")
     fig.savefig(os.path.join(utils.FIGURES_URL, "b_heatmap"))
     plt.close()
 

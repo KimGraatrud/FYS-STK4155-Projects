@@ -21,6 +21,7 @@ def poly_features(x, d, intercept=False):
     exp, base = np.meshgrid(orders, x)
     return base**exp
 
+
 def scale_poly_features(X):
     """
     Scales the columns of the Feature Matrix X using the standard X - mean / std formula.
@@ -41,10 +42,11 @@ def scale_poly_features(X):
 
     mean = X.mean(axis=0)
     std = X.std(axis=0)
-    nonzero_std = np.where(std == 0, 1., std)
+    nonzero_std = np.where(std == 0, 1.0, std)
     X_scaled = (X - mean) / nonzero_std
     scaler = (mean, nonzero_std)
     return X_scaled, scaler
+
 
 def runge(x):
     return 1 / (1 + 25 * x**2)
@@ -52,3 +54,4 @@ def runge(x):
 
 FIGURES_URL = "./figures/"
 RANDOM_SEED = 2025
+APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)

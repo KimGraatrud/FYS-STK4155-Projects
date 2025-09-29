@@ -185,17 +185,30 @@ class GD:
 
         return theta
 
-    def LassoRegression(self, X, y):
+    def Lasso(self, X, y):
         n = y.shape[0]
         theta = np.zeros(X.shape[1])
-        change = np.zeros_like(theta)
 
-        for _ in range(self.n):
-            grad = ((1 / n) * X.T @ (X @ theta - y)) + self.lmbda * np.sign(theta)
-            z = theta + (-1 * self.eta * grad)
-            theta = np.sign(z) * np.maximum((np.abs(z) - self.eta * self.lmbda), 0)
-            if np.linalg.norm(grad) < self.atol:
+        record = []
+
+        for i in range(self.n):
+            grad = ((1 / n) * X.T @ (X @ theta - y)) + self.lamb * np.sign(theta)
+
+            # TODO: What's up with this?
+            # z = theta + (-1 * self.eta * grad)
+            # theta = np.sign(z) * np.maximum((np.abs(z) - self.eta * self.lamb), 0)
+
+            theta += -1 * self.eta * grad
+
+            if self.full_output:
+                record.append(np.copy(theta))
+
+            if (self.atol is not None) and (np.linalg.norm(grad) < self.atol):
                 break
+
+        if self.full_output:
+            stats = {"n": i + 1, "record": np.array(record)}
+            return theta, stats
 
         return theta
 
