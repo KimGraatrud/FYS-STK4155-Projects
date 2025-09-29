@@ -10,9 +10,10 @@ Our repository has the following structure:
 <!-- GPT generated section -->
 ```bash
 ├── src/            # Source files
-    ├── parts/      # Data generation
-├── doc/           # Documents
-    ├── figures/    # Figures for the paper
+    └── parts/      # Data generation
+├── doc/            # Documents
+    └── figures/    # Figures for the paper
+├── main.py         # Main file
 └── README.md       # Project readme
 ```
 <!-- GPT generated section end -->
@@ -20,6 +21,7 @@ Our repository has the following structure:
 - `src/` houses the source code for the project (gradient decent, regression, etc.)
 - `parts/` imports the code from src and generates the data and figures used in the paper in `doc/figures/`.
 - `doc/` contains the paper in .pdf format and the figures used for it in `figures/`
+- `main.py` is where we import and call the files from `parts/` and generate all the results.
 - `readme.md` is this file.
 
 
