@@ -29,8 +29,8 @@ Our repository has the following structure:
 
 Clone the repository:
 ```bash
-git clone https://github.com/username/repo-name.git
-cd repo-name
+git clone https://github.com/KimGraatrud/FYS-STK4155-Projects.git
+cd FYS-STK4155-Projects/Project_1/
 ```
 
 

@@ -194,10 +194,6 @@ class GD:
         for i in range(self.n):
             grad = ((1 / n) * X.T @ (X @ theta - y)) + self.lamb * np.sign(theta)
 
-            # TODO: What's up with this?
-            # z = theta + (-1 * self.eta * grad)
-            # theta = np.sign(z) * np.maximum((np.abs(z) - self.eta * self.lamb), 0)
-
             theta += -1 * self.eta * grad
 
             if self.full_output:
@@ -221,9 +217,9 @@ class GD:
         t0, t1 = 5, 10
         return t0/(t+t1)
 
-    # TODO: Check for bugs and test the SGD functions.
+    # TODO: Check for bugs and test the SGD function.
 
-    def example_SGD(self,
+    def StochasticGD(self,
                     X: np.ndarray,
                     y: np.ndarray,
                     M: int) -> np.ndarray:

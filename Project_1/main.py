@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from src.parts import A, B, C, D
+from src.parts import A, B, C, D, G
 
 plt.rcParams.update(
     {
@@ -21,10 +21,10 @@ plt.rcParams.update(
         "ytick.minor.width": 0.3,
         "xtick.minor.width": 0.3,
         # Fonts
-        "text.usetex": True,
-        "mathtext.fontset": "cm",
-        "font.family": "serif",
-        "font.serif": "Computer Modern Roman",
+        "text.usetex": False,       # Got some wierd latex error when i had this enabled...
+        # "mathtext.fontset": "cm",
+        # "font.family": "serif",
+        # "font.serif": "Computer Modern Roman",
         "legend.fontsize": 10,
         "axes.titlesize": 10,
         "figure.titlesize": 10,
@@ -42,7 +42,20 @@ plt.rcParams.update(
     }
 )
 
+# TODO: Part A doesnt run 
+"""
+File "/home/stevensj/Coding/UiO/STK-FYS4155/FYS-STK4155-Projects/Project_1/src/regression.py", line 6, in OLS
+    return np.linalg.inv(X.T @ X) @ X.T @ y
+           ~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/stevensj/Coding/UiO/STK-FYS4155/stkfys-pyenv/lib/python3.13/site-packages/numpy/linalg/_linalg.py", line 669, in inv
+    ainv = _umath_linalg.inv(a, signature=signature)
+  File "/home/stevensj/Coding/UiO/STK-FYS4155/stkfys-pyenv/lib/python3.13/site-packages/numpy/linalg/_linalg.py", line 163, in _raise_linalgerror_singular
+    raise LinAlgError("Singular matrix")
+numpy.linalg.LinAlgError: Singular matrix
+"""
+
 # A.main()
 # B.main()
 # C.main()
-D.main()
+# D.main()
+G.main()
