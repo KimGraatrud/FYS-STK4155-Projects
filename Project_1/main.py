@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from src.parts import A, B, C, D, G
+from src.parts import A, B, C, D, G, H
 
 plt.rcParams.update(
     {
@@ -58,4 +58,5 @@ numpy.linalg.LinAlgError: Singular matrix
 # B.main()
 # C.main()
 # D.main()
-G.main()
+# G.main()
+H.main()

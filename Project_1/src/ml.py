@@ -38,14 +38,14 @@ class GD:
     """
 
     def __init__(
-        self, eta=1e-3, n_iterations=1e5, lamb=0, mass=0, atol=1e-8, full_output=False
+        self, eta=1e-3, n_iterations=1e5, lamb=0, mass=0, atol=1e-8, verbose=False
     ):
         self.set_niterations(n_iterations)
         self.eta = eta
         self.mass = mass
         self.atol = atol
         self.lamb = lamb
-        self.full_output = full_output
+        self.full_output = verbose
 
     def set_niterations(self, n):
         """
@@ -186,8 +186,8 @@ class GD:
         return theta
 
     def Lasso(self, X, y):
-        n = y.shape[0]
-        theta = np.zeros(X.shape[1])
+        n, p = X.shape
+        theta = np.zeros(p)
 
         record = []
 
