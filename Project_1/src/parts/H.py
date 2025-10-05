@@ -2,103 +2,65 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
-from .. import utils, regression
+from .. import utils, regression, resampling
 from .A import create_data
 
-def _indices_k_split(n: int, k: int, rng, verbose=False):
-    """
-    Split indices randomly and assign one block to train and the rest to train.
-    """
 
-    indices = np.arange(n)
-    rng.shuffle(indices)
-    split = np.array_split(indices, k)
+def compare_bootstrap_kfold(x,y,maxdeg, lamR, lamL, nbootstraps, k):
 
-    if verbose:
-        print(indices)
-        print(split)
+    resampling_methods = resampling.resampling_methods(x,y,maxdeg, lamR, lamL)
 
-    return indices, split
+    degrees, BOLS_stats, BRidge_stats, BLasso_stats = resampling_methods.BootstrapALL(
+        nbootstraps, verbose=False
+    )
 
-def k_fold_CV(x: int, y: int, k: int,
-              degrees: np.ndarray,
-              lamb_R: np.ndarray,
-              lamb_L: np.ndarray,
-              verbose: bool = False):
-    """
-    Runs k-fold-CV on OLS, Ridge, and Lasso, reports the MSE of all methods for each degree.
-    """
+    KOLS_MSE, KRidge_MSE, KLasso_MSE, KRidge_param, KLasso_param = resampling_methods.k_fold_CV(
+        k, verbose=False
+    )
 
-    rng = np.random.default_rng(seed=utils.RANDOM_SEED)
-    indices, folds = _indencies_k_split(len(y), k, rng)
-    ndeg = len(degrees)
+    
 
-    OLS_MSE = np.emptylike(degrees, dtype=float)
-    Ridge_MSE = np.empty((ndeg, len(lamb_R)), dtype=float)
-    Lasso_MSE = np.empty((ndeg, len(lamb_L)), dtype=float)
-    Ridge_param = np.emptylike(degrees, dtype=float)
-    Lasso_param = np.emptylike(degrees, dtype=float)
+    fig, ax = plt.subplots(figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W))
 
-    for i, deg in enumerate(degrees):
+    colors = utils.colors
 
-        OLSfoldMSE = np.empty(k, dtype=float)
-        RidgefoldMSE = np.empty((len(lamb_R), k), dtype=float)
-        LassofoldMSE = np.empty((len(lamb_L), k), dtype=float)
+    ax.set_xlabel("Degree")
+    ax.set_ylabel("MSE")
 
-        for j, test_idx in enumerate(folds):
+    ax.set_title("MSE comparison between Bootstrap and k-fold CV")
 
-            # Grab every index exept for the current fold
-            mask = np.isin(indices, test_idx, assume_unique=True)
-            train_idx = indices[~mask]
+    ax.plot(degrees, BOLS_stats['MSE'], label='Bootstrap OLS', c=colors['ols'])
+    ax.plot(degrees, KOLS_MSE, label='k-fold CV OLS', linestyle='dashed', c=colors['ols'])
 
-            Xtrain = utils.poly_features(x[train_idx], deg, intercept=True)
-            Xtest = utils.poly_features(x[test_idx], deg, intercept=True)
-            y_train = y[train_idx]
-            y_test = y[test_idx]
+    ax.plot(degrees, BRidge_stats['MSE'], label='Bootstrap OLS', c=colors['ridge'])
+    ax.plot(degrees, KRidge_MSE, label='k-fold CV OLS', linestyle='dashed', c=colors['ridge'])
 
-            OLS_beta = regression.OLS(Xtrain, y_train)
-            OLS_prediction = Xtest @ OLS_beta
-            OLSfoldMSE[j] = utils.MSE(y_test, OLS_prediction)
+    ax.plot(degrees, BLasso_stats['MSE'], label='Bootstrap OLS', c=colors['lasso'])
+    ax.plot(degrees, KLasso_MSE, label='k-fold CV OLS', linestyle='dashed', c=colors['lasso'])
 
-            for ri, lamb in enumerate(lamb_R):
+    fig.legend(loc="outside lower center", ncols=2, frameon=False)
+    fig.set_figheight(0.9 * utils.APS_COL_W)
+    fig.savefig(os.path.join(utils.FIGURES_URL, "bootstrap-VS-kfold"))
+    plt.close()
 
-                Ridge_beta = regression.ridge(Xtrain, y_train, lam=lamb)
-                Ridge_prediction = Xtest @ Ridge_beta
-                RidgefoldMSE[ri, j] = utils.MSE(y_test, Ridge_prediction)
-
-            for li, lamb in enumerate(lamb_L):
-
-                _iter = 1000
-                model = ml.GD(n_iterations=_iter, lamb=lamb)
-                Lasso_beta = model.Lasso(Xtrain, y_train)
-                Lasso_prediction = Xtest @ Lasso_beta
-                LassofoldMSE[li, j] = utils.MSE(y_test, Lasso_prediction)
-
-        OLS_MSE[i] = np.mean(OLSfoldMSE)
-        Ridge_MSE[i, :] = np.mean(RidgefoldMSE, axis=1)
-        Lasso_MSE[i, :] = np.mean(LassofoldMSE, axis=1)
-
-        best_Ridge_param = np.argmin(RidgefoldMSE, axis=0)
-        Ridge_param[i] = lamb_R[best_Ridge_param]
-        best_Lasso_param = np.argmin(LassofoldMSE, axis=0)
-        Lasso_param[i] = lamb_R[best_Lasso_param]
-
-    if verbose:
-        print(OLS_MSE)
-        print(Ridge_MSE)
-        print(Lasso_MSE)
-        print(Ridge_param)
-        print(Lasso_param)
-
-    return OLS_MSE, Ridge_MSE, Lasso_MSE, Ridge_param, Lasso_param
+    
 
 
     
 
 def main():
 
-    n = 100
+    n = 1e4
+    n_bootstrap = 1000
     k = 10
+    maxdegree = 10
+    x, y = create_data(n)
+
+    nlambdas = 100
+    lamb_R = np.logspace(-5, -1, nlambdas)
+    lamb_L = np.logspace(-4, 4, nlambdas)
+    
+    compare_bootstrap_kfold(x,y, maxdegree, lamb_R, lamb_L, n_bootstrap, k)
 
 
 
