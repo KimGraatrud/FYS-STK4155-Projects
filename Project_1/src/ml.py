@@ -49,6 +49,7 @@ class GD:
         atol=1e-8,
         M=None,
         verbose=False,
+        has_interecpt=True,
     ):
         self.X = X
         self.y = y
@@ -60,6 +61,7 @@ class GD:
         self.verbose = verbose
         self.rng = np.random.default_rng(seed=utils.RANDOM_SEED)
         self._M = int(np.round(M)) if M is not None else len(y)
+        self.has_interecpt = has_interecpt
 
     def set_niterations(self, n):
         """
@@ -83,6 +85,13 @@ class GD:
 
         return self.X[indices], self.y[indices]
 
+    def _calc_penalty(self, theta):
+        S = np.eye(len(theta))
+        if self.has_interecpt:  # don't penalize the intercept
+            S[0, 0] = 0
+
+        return self.lamb * theta @ S
+
     def Grad(self):
         """
         Gradient decent method that does both OLS and Ridge based on the choice of lamb and mass in the constructor.
@@ -99,7 +108,7 @@ class GD:
 
             Xi, yi = self._make_minibatch()
 
-            penalty = self.lamb * theta
+            penalty = self._calc_penalty(theta)
             momentum = self.mass * change
 
             grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
@@ -130,7 +139,7 @@ class GD:
 
             Xi, yi = self._make_minibatch()
 
-            penalty = self.lamb * theta
+            penalty = self._calc_penalty(theta)
             momentum = self.mass * change
 
             grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
@@ -163,10 +172,10 @@ class GD:
 
             Xi, yi = self._make_minibatch()
 
-            penalty = self.lamb * theta
+            penalty = self._calc_penalty(theta)
             momentum = self.mass * change
 
-            grad = 2 * ((1 / len(yi)) * Xi.T @ (Xi @ theta - yi) + penalty)
+            grad = 2 * (1 / len(yi)) * Xi.T @ (Xi @ theta - yi) + penalty
             r = decay * r + (1 - decay) * grad**2
 
             weights = self.eta / np.sqrt(delta + r)
@@ -198,8 +207,7 @@ class GD:
 
             Xi, yi = self._make_minibatch()
 
-            penalty = self.lamb * theta
-            momentum = self.mass * change
+            penalty = self._calc_penalty(theta)
             t = i + 1
 
             grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
@@ -210,7 +218,6 @@ class GD:
             r_hat = r / (1 - decay_2**t)
 
             change = -1 * self.eta * s_hat / (np.sqrt(r_hat) + delta)
-            # change = (-1 * weights * grad) + momentum
             theta += change
 
             if self.verbose:
@@ -232,11 +239,14 @@ class GD:
 
         record = []
 
-        X = self.X
-        y = self.y
-
         for i in range(self.n):
-            grad = ((1 / n) * X.T @ (X @ theta - y)) + self.lamb * np.sign(theta)
+
+            X, y = self._make_minibatch()
+
+            S = np.eye(len(theta))
+            if self.has_interecpt:  # don't penalize the intercept
+                S[0, 0] = 0
+            grad = ((1 / n) * X.T @ (X @ theta - y)) + self.lamb * np.sign(theta) @ S
 
             theta += -1 * self.eta * grad
 
@@ -260,48 +270,3 @@ class GD:
         """
         t0, t1 = 5, 10
         return t0 / (t + t1)
-
-    # TODO: Check for bugs and test the SGD function.
-
-    def StochasticGD(self, X: np.ndarray, y: np.ndarray, M: int) -> np.ndarray:
-        """
-        SGD method using the Lecture notes from week 37 as a baseline.
-        """
-
-        n, p = X.shape
-        theta = np.zeros(p, dtype=float)
-        change = np.zeros_like(theta)
-        epochs = self.n
-        m = int(n / M)
-
-        j = 0
-        for epoch in range(epochs):
-            for i in range(m):
-
-                penalty = self.lamb * theta
-                momentum = self.mass * change
-
-                index = M * np.random.randint(m)
-
-                xi = X[index : index + M]
-                yi = y[index : index + M]
-
-                length = len(yi)
-
-                grad = (2 / length) * Xi.T @ (Xi @ theta - yi) + penalty
-                eta = self._learning_schedule(j)
-                change = (-1 * eta * grad) + momentum
-                theta += change
-                j += 1
-
-                if self.verbose:
-                    record.append(np.copy(theta))
-
-                if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
-                    break
-
-        if self.verbose:
-            stats = {"n": j + 1, "record": np.array(record)}
-            return theta, stats
-
-        return theta
