@@ -62,17 +62,15 @@ class GD:
         """
         self.n = int(np.round(n))
 
-    def _make_minibatch(self, X, y):
+    def _make_minibatch(self, X: np.ndarray, y: np.ndarray, replace=False):
         """
         Splits X and y into m minibatches, returns the split versions and then we can take a random int and chose a batch
         """
         n, p = X.shape
-        M = int(n/self._m)
-        indices = np.sort(self.rng.integers(0, n, size=M))
+        M = max(1, int(n//self._m))
+        indices = self.rng.choice(n, size=M, replace=replace)
 
-        Xsplit = X[indices]
-        ysplit = y[indices]
-        return Xsplit, ysplit
+        return X[indices], y[indices]
         
 
     def Grad(self, X, y):
@@ -158,7 +156,7 @@ class GD:
             penalty = self.lamb * theta
             momentum = self.mass * change
 
-            grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
+            grad = 2 * ((1 / len(yi)) * Xi.T @ (Xi @ theta - yi) + penalty) 
             r = decay * r + (1 - decay) * grad**2
 
             weights = self.eta / np.sqrt(delta + r)

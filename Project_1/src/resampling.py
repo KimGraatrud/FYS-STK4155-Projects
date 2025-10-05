@@ -23,14 +23,15 @@ class resampling:
         """
 
         degrees = np.arange(maxdegree + 1)
+        num_models = 3 # OLS Ridge and Lasso
 
         x_train, x_test, y_train, y_test = train_test_split(
             x, y, train_size=0.8, random_state=utils.RANDOM_SEED
         )
         
-        MSE = np.empty_like(degrees, dtype=float)
-        bias = np.empty_like(degrees, dtype=float)
-        variance = np.empty_like(degrees, dtype=float)
+        MSE = np.empty_like((degrees, num_models), dtype=float)
+        bias = np.empty_like((degrees, num_models), dtype=float)
+        variance = np.empty_like((degrees, num_models), dtype=float)
 
         for i, deg in enumerate(degrees):
 
@@ -41,7 +42,7 @@ class resampling:
             for j in range(n_bootstraps):
                 _x, _y = resample(x_train, y_train)
                 Xtrain = utils.poly_features(_x, deg, intercept=True)
-                beta = regression.OLS(Xtrain, _y)
+                OLSbeta = regression.OLS(Xtrain, _y)
                 prediction[:,j] = (Xtest @ beta).ravel()
 
             
