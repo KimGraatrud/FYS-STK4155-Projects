@@ -9,8 +9,8 @@ from .. import utils, ml
 
 def fit_grad(x, y, d, **grad_kwargs):
     X = utils.poly_features(x, d, intercept=True)
-    descender = ml.GD(**grad_kwargs)
-    return descender.Grad(X, y)
+    descender = ml.GD(X, y, **grad_kwargs)
+    return descender.Grad()
 
 
 def heatmap():
@@ -92,14 +92,13 @@ def eta_n_relationship():
     etas = np.logspace(-3, -0.1, 20)  # learning rates
     ns = np.zeros_like(etas)  # number of iterations before stopping
 
-    gd = ml.GD(n_iterations=max_n, atol=atol, full_output=True)
-    # gd = ml.GD(n_iterations=max_n, atol=atol, mass=1)
-
     X = utils.poly_features(x, degree, intercept=True)
+
+    gd = ml.GD(X, y, n_iterations=max_n, atol=atol, verbose=True)
 
     for i, eta in enumerate(etas):
         gd.eta = eta
-        _, stats = gd.Grad(X, y)
+        _, stats = gd.Grad()
         ns[i] = stats["n"]
 
     fig, ax = plt.subplots()

@@ -1,5 +1,6 @@
 import numpy as np
-from . import utils 
+from . import utils
+
 
 class GD:
     """
@@ -38,16 +39,27 @@ class GD:
     """
 
     def __init__(
-        self, eta=1e-3, n_iterations=1e5, lamb=0, mass=0, atol=1e-8, m: int = 1, full_output=False
+        self,
+        X,
+        y,
+        eta=1e-3,
+        n_iterations=1e5,
+        lamb=0,
+        mass=0,
+        atol=1e-8,
+        M=None,
+        verbose=False,
     ):
+        self.X = X
+        self.y = y
         self.set_niterations(n_iterations)
         self.eta = eta
         self.mass = mass
         self.atol = atol
         self.lamb = lamb
-        self.full_output = full_output
-        self._m = m
+        self.verbose = verbose
         self.rng = np.random.default_rng(seed=utils.RANDOM_SEED)
+        self._M = int(np.round(M)) if M is not None else len(y)
 
     def set_niterations(self, n):
         """
@@ -62,24 +74,22 @@ class GD:
         """
         self.n = int(np.round(n))
 
-    def _make_minibatch(self, X: np.ndarray, y: np.ndarray, replace=False):
+    def _make_minibatch(self, replace=False):
         """
         Splits X and y into m minibatches, returns the split versions and then we can take a random int and chose a batch
         """
-        n, p = X.shape
-        M = max(1, int(n//self._m))
-        indices = self.rng.choice(n, size=M, replace=replace)
+        n, p = self.X.shape
+        indices = self.rng.choice(n, size=self._M, replace=replace)
 
-        return X[indices], y[indices]
-        
+        return self.X[indices], self.y[indices]
 
-    def Grad(self, X, y):
+    def Grad(self):
         """
         Gradient decent method that does both OLS and Ridge based on the choice of lamb and mass in the constructor.
 
         See the documentation for the whole class for a usage guide.
         """
-        n, p = X.shape
+        n, p = self.X.shape
         theta = np.zeros(p)
         change = np.zeros_like(theta)
 
@@ -87,31 +97,30 @@ class GD:
 
         for i in range(self.n):
 
-            Xi, yi = self._make_minibatch(X,y)
+            Xi, yi = self._make_minibatch()
 
             penalty = self.lamb * theta
             momentum = self.mass * change
 
-            penalty = self.lamb * theta
-            momentum = self.mass * change
             grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
             change = (-1 * self.eta * grad) + momentum
             theta += change
 
-            if self.full_output:
+            if self.verbose:
                 record.append(np.copy(theta))
 
             if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
                 break
 
-        if self.full_output:
+        if self.verbose:
             stats = {"n": i + 1, "record": np.array(record)}
             return theta, stats
 
         return theta
 
-    def AdaGrad(self, X, y, delta=1e-7):
-        theta = np.zeros(X.shape[1])
+    def AdaGrad(self, delta=1e-7):
+        n, p = self.X.shape
+        theta = np.zeros(p)
         change = np.zeros_like(theta)
         r = np.zeros_like(theta)
 
@@ -119,31 +128,32 @@ class GD:
 
         for i in range(self.n):
 
-            Xi, yi = self._make_minibatch(X,y)
+            Xi, yi = self._make_minibatch()
 
             penalty = self.lamb * theta
             momentum = self.mass * change
 
-            grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi))+ penalty
+            grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
             r += grad**2
             weights = self.eta / (delta + np.sqrt(r))
             change = (-1 * weights * grad) + momentum
             theta += change
 
-            if self.full_output:
+            if self.verbose:
                 record.append(np.copy(theta))
 
             if (self.atol is not None) and (np.linalg.norm(grad) < self.atol):
                 break
 
-        if self.full_output:
+        if self.verbose:
             stats = {"n": i + 1, "record": np.array(record)}
             return theta, stats
 
         return theta
 
-    def RMSGrad(self, X, y, delta=1e-7, decay=0.99):
-        theta = np.zeros(X.shape[1])
+    def RMSGrad(self, delta=1e-7, decay=0.99):
+        n, p = self.X.shape
+        theta = np.zeros(p)
         change = np.zeros_like(theta)
         r = np.zeros_like(theta)
 
@@ -151,32 +161,32 @@ class GD:
 
         for i in range(self.n):
 
-            Xi, yi = self._make_minibatch(X,y)
+            Xi, yi = self._make_minibatch()
 
             penalty = self.lamb * theta
             momentum = self.mass * change
 
-            grad = 2 * ((1 / len(yi)) * Xi.T @ (Xi @ theta - yi) + penalty) 
+            grad = 2 * ((1 / len(yi)) * Xi.T @ (Xi @ theta - yi) + penalty)
             r = decay * r + (1 - decay) * grad**2
 
             weights = self.eta / np.sqrt(delta + r)
             change = (-1 * weights * grad) + momentum
             theta += change
 
-            if self.full_output:
+            if self.verbose:
                 record.append(np.copy(theta))
 
             if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
                 break
 
-        if self.full_output:
+        if self.verbose:
             stats = {"n": i + 1, "record": np.array(record)}
             return theta, stats
 
         return theta
 
-    def ADAM(self, X, y, delta=1e-8, decay_1=0.9, decay_2=0.9, m: int = 1):
-        n, p = X.shape
+    def ADAM(self, delta=1e-8, decay_1=0.9, decay_2=0.9):
+        n, p = self.X.shape
         theta = np.zeros(p)
         change = np.zeros_like(theta)
         s = np.zeros_like(theta)  # first moment estimates
@@ -186,7 +196,7 @@ class GD:
 
         for i in range(self.n):
 
-            Xi, yi = self._make_minibatch(X,y)
+            Xi, yi = self._make_minibatch()
 
             penalty = self.lamb * theta
             momentum = self.mass * change
@@ -203,36 +213,40 @@ class GD:
             # change = (-1 * weights * grad) + momentum
             theta += change
 
-            if self.full_output:
+            if self.verbose:
                 record.append(np.copy(theta))
 
             if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
                 break
 
-        if self.full_output:
+        if self.verbose:
             stats = {"n": i + 1, "record": np.array(record)}
             return theta, stats
 
         return theta
 
-    def Lasso(self, X, y):
-        n, p = X.shape
+    def Lasso(self):
+        # TODO: fix me
+        n, p = self.X.shape
         theta = np.zeros(p)
 
         record = []
+
+        X = self.X
+        y = self.y
 
         for i in range(self.n):
             grad = ((1 / n) * X.T @ (X @ theta - y)) + self.lamb * np.sign(theta)
 
             theta += -1 * self.eta * grad
 
-            if self.full_output:
+            if self.verbose:
                 record.append(np.copy(theta))
 
             if (self.atol is not None) and (np.linalg.norm(grad) < self.atol):
                 break
 
-        if self.full_output:
+        if self.verbose:
             stats = {"n": i + 1, "record": np.array(record)}
             return theta, stats
 
@@ -245,15 +259,11 @@ class GD:
         Updates the learning rate for SGD dynamically.
         """
         t0, t1 = 5, 10
-        return t0/(t+t1)
+        return t0 / (t + t1)
 
     # TODO: Check for bugs and test the SGD function.
 
-    def StochasticGD(self,
-                    X: np.ndarray,
-                    y: np.ndarray,
-                    M: int) -> np.ndarray:
-
+    def StochasticGD(self, X: np.ndarray, y: np.ndarray, M: int) -> np.ndarray:
         """
         SGD method using the Lecture notes from week 37 as a baseline.
         """
@@ -262,20 +272,19 @@ class GD:
         theta = np.zeros(p, dtype=float)
         change = np.zeros_like(theta)
         epochs = self.n
-        m = int(n/M)
+        m = int(n / M)
 
-        j=0
+        j = 0
         for epoch in range(epochs):
             for i in range(m):
 
                 penalty = self.lamb * theta
                 momentum = self.mass * change
 
-
                 index = M * np.random.randint(m)
 
-                xi = X[index:index + M]
-                yi = y[index:index + M]
+                xi = X[index : index + M]
+                yi = y[index : index + M]
 
                 length = len(yi)
 
@@ -285,14 +294,13 @@ class GD:
                 theta += change
                 j += 1
 
-                if self.full_output:
+                if self.verbose:
                     record.append(np.copy(theta))
-
 
                 if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
                     break
-            
-        if self.full_output:
+
+        if self.verbose:
             stats = {"n": j + 1, "record": np.array(record)}
             return theta, stats
 

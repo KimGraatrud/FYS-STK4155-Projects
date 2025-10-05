@@ -11,7 +11,7 @@ def Rsqd(truth, prediction):
     return 1 - (sum1 / sum2)
 
 
-def poly_features(x, d, intercept=False):
+def poly_features(x, d, intercept=True):
     """
     x: input
     d: degree
@@ -53,5 +53,16 @@ def runge(x):
 
 
 FIGURES_URL = "./figures/"
+DATA_URL = "./data/"
 RANDOM_SEED = 2025
 APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
+
+colors = {
+    "ols": "tab:blue",
+    "mass": "tab:orange",
+    "ridge": "tab:green",
+    "rms": "#d43b38",
+    "ada": "peru",
+    "adam": "mediumpurple",
+    "lasso": "yellowgreen",
+}

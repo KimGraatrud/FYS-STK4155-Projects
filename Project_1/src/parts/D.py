@@ -24,7 +24,7 @@ def setup_comparison():
     x, y = create_data(N)
     X = utils.poly_features(x, degree, intercept=True)
 
-    gd = ml.GD(full_output=True, eta=1e-1, atol=None, n_iterations=n_max)
+    gd = ml.GD(X, y, verbose=True, eta=1e-1, atol=None, n_iterations=n_max)
 
     fig, ax = plt.subplots(figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W))
 
@@ -39,9 +39,9 @@ def setup_comparison():
     )
 
     # OLS
-    _, stats = gd.Grad(X, y)
+    _, stats = gd.Grad()
     MSE_ols = MSE_from_record(X, y, stats["record"])
-    ax.plot(MSE_ols, label="OLS")
+    ax.plot(MSE_ols, label="OLS", c=utils.colors["ols"])
 
     ax.set_xlabel("Iteration")
     ax.set_ylabel("Training MSE")
@@ -63,7 +63,7 @@ def compare_rms():
     # RMSGrad
     decay = np.array([0.7, 0.9, 0.99])
     for d in decay:
-        _, stats = gd.RMSGrad(X, y, 1e-7, d)
+        _, stats = gd.RMSGrad(1e-7, d)
         MSE = MSE_from_record(X, y, stats["record"])
         label = r"$\rho = " + f"{d}$"
         ax.plot(MSE, label=label, c=cmap(norm(d)))
@@ -85,7 +85,7 @@ def compare_adam():
     decay_1 = np.array([0.7, 0.9, 0.99])
     d2 = 0.99
     for d1 in decay_1:
-        _, stats = gd.ADAM(X, y, 1e-7, d1, d2)
+        _, stats = gd.ADAM(1e-7, d1, d2)
         MSE = MSE_from_record(X, y, stats["record"])
         label = r"$\rho_1 = " + f"{d1}" + r"$, $\rho_2 = " + f"{d2}$"
         ax.plot(MSE, label=label, c=cmap(norm(d1)))
@@ -94,7 +94,7 @@ def compare_adam():
     decay_2 = np.array([0.7, 0.999])
     lss = ["--", "-."]
     for d2, ls in zip(decay_2, lss):
-        _, stats = gd.ADAM(X, y, 1e-7, d1, d2)
+        _, stats = gd.ADAM(1e-7, d1, d2)
         MSE = MSE_from_record(X, y, stats["record"])
         label = r"$\rho_1 = " + f"{d1}" + r"$, $\rho_2 = " + f"{d2}$"
         ax.plot(MSE, label=label, ls=ls, c=cmap(norm(d1)))
@@ -118,7 +118,7 @@ def compare_momentum():
         # OLS w/ momentum
         gd.lamb = 0
         gd.mass = m
-        _, stats = gd.Grad(X, y)
+        _, stats = gd.Grad()
         MSE_mntm = MSE_from_record(X, y, stats["record"])
         ax.plot(MSE_mntm, label=f"mass = {m}", c=cmap(norm(m)))
 
@@ -141,14 +141,14 @@ def compare_lasso():
 
     # Ridge for comparison
     gd.lamb = 1e-2
-    _, stats = gd.Grad(X, y)
+    _, stats = gd.Grad()
     MSE_ridge = MSE_from_record(X, y, stats["record"])
     ax.plot(MSE_ridge, label=r"Ridge, $\lambda=10^" + f"{{{np.log10(gd.lamb):.0f}}}$")
 
     # Lasso
     for l in lambs:
         gd.lamb = l
-        _, stats = gd.Lasso(X, y)
+        _, stats = gd.Lasso()
         MSE_lasso = MSE_from_record(X, y, stats["record"])
         label = r"$\lambda=" + f"10^{{{np.log10(l):.0f}}}$"
         ax.plot(MSE_lasso, label=label, c=cmap(norm(np.log10(l))))
@@ -166,48 +166,49 @@ def compare_all():
     # OLS w/ momentum
     gd.lamb = 0
     gd.mass = 0.2
-    _, stats = gd.Grad(X, y)
+    _, stats = gd.Grad()
     MSE_mntm = MSE_from_record(X, y, stats["record"])
-    ax.plot(MSE_mntm, label="OLS + momentum")
+    ax.plot(MSE_mntm, label="OLS + momentum", c=utils.colors["mass"])
 
     # Ridge
     gd.lamb = 1e-2
     gd.mass = 0
-    _, stats = gd.Grad(X, y)
+    _, stats = gd.Grad()
     MSE_ridge = MSE_from_record(X, y, stats["record"])
-    ax.plot(MSE_ridge, label="Ridge")
+    ax.plot(MSE_ridge, label="Ridge", c=utils.colors["ridge"])
 
     # RMS
     gd.lamb = 0
     decay = 0.99
     delta = 1e-7
-    _, stats = gd.RMSGrad(X, y, delta, decay)
+    _, stats = gd.RMSGrad(delta, decay)
     MSE_rms = MSE_from_record(X, y, stats["record"])
     # break the RMS plot into stable and unstable
     it = np.arange(MSE_rms.shape[0])
     stable = it < 1.5e2
-    rms_color = "#d43b38"
-    ax.plot(it[stable], MSE_rms[stable], label="RMSProp", c=rms_color, zorder=0)
-    ax.plot(it[~stable], MSE_rms[~stable], c=rms_color, lw=0.3, zorder=0)
+    ax.plot(
+        it[stable], MSE_rms[stable], label="RMSProp", c=utils.colors["rms"], zorder=0
+    )
+    ax.plot(it[~stable], MSE_rms[~stable], c=utils.colors["rms"], lw=0.3, zorder=0)
 
     # ADAGrad
     gd.mass = 0
-    _, stats = gd.AdaGrad(X, y, delta=delta)
+    _, stats = gd.AdaGrad(delta=delta)
     MSE_ada = MSE_from_record(X, y, stats["record"])
-    ax.plot(MSE_ada, label="ADAGrad", c="peru")
+    ax.plot(MSE_ada, label="ADAGrad", c=utils.colors["ada"])
 
     # ADAM
     decay_1 = 0.9
     decay_2 = 0.9
     delta = 1e-8
-    _, stats = gd.ADAM(X, y, delta, decay_1, decay_2)
+    _, stats = gd.ADAM(delta, decay_1, decay_2)
     MSE_adam = MSE_from_record(X, y, stats["record"])
-    ax.plot(MSE_adam, label="ADAM", c="mediumpurple")
+    ax.plot(MSE_adam, label="ADAM", c=utils.colors["adam"])
 
     # Lasso
-    _, stats = gd.Lasso(X, y)
+    _, stats = gd.Lasso()
     MSE_lasso = MSE_from_record(X, y, stats["record"])
-    ax.plot(MSE_lasso, label="Lasso", c="yellowgreen")
+    ax.plot(MSE_lasso, label="Lasso", c=utils.colors["lasso"])
 
     ax.set_title("MSE during descent, various methods")
     fig.legend(loc="outside lower center", ncols=2, frameon=False)
