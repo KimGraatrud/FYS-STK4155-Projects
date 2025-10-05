@@ -1,5 +1,5 @@
 import numpy as np
-
+from . import utils 
 
 class GD:
     """
@@ -38,14 +38,16 @@ class GD:
     """
 
     def __init__(
-        self, eta=1e-3, n_iterations=1e5, lamb=0, mass=0, atol=1e-8, verbose=False
+        self, eta=1e-3, n_iterations=1e5, lamb=0, mass=0, atol=1e-8, m: int = 1, full_output=False
     ):
         self.set_niterations(n_iterations)
         self.eta = eta
         self.mass = mass
         self.atol = atol
         self.lamb = lamb
-        self.full_output = verbose
+        self.full_output = full_output
+        self._m = m
+        self.rng = np.random.default_rng(seed=utils.RANDOM_SEED)
 
     def set_niterations(self, n):
         """
@@ -60,21 +62,41 @@ class GD:
         """
         self.n = int(np.round(n))
 
+    def _make_minibatch(self, X, y):
+        """
+        Splits X and y into m minibatches, returns the split versions and then we can take a random int and chose a batch
+        """
+        n, p = X.shape
+        M = int(n/self._m)
+        indices = np.sort(self.rng.integers(0, n, size=M))
+
+        Xsplit = X[indices]
+        ysplit = y[indices]
+        return Xsplit, ysplit
+        
+
     def Grad(self, X, y):
         """
         Gradient decent method that does both OLS and Ridge based on the choice of lamb and mass in the constructor.
 
         See the documentation for the whole class for a usage guide.
         """
-        theta = np.zeros(X.shape[1])
+        n, p = X.shape
+        theta = np.zeros(p)
         change = np.zeros_like(theta)
 
         record = []  # recording of parameters at each step of the gradient descent
 
         for i in range(self.n):
+
+            Xi, yi = self._make_minibatch(X,y)
+
             penalty = self.lamb * theta
             momentum = self.mass * change
-            grad = 2 * ((1 / y.shape[0]) * X.T @ (X @ theta - y) + penalty)
+
+            penalty = self.lamb * theta
+            momentum = self.mass * change
+            grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
             change = (-1 * self.eta * grad) + momentum
             theta += change
 
@@ -98,10 +120,13 @@ class GD:
         record = []
 
         for i in range(self.n):
+
+            Xi, yi = self._make_minibatch(X,y)
+
             penalty = self.lamb * theta
             momentum = self.mass * change
 
-            grad = 2 * ((1 / y.shape[0]) * X.T @ (X @ theta - y) + penalty)
+            grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi))+ penalty
             r += grad**2
             weights = self.eta / (delta + np.sqrt(r))
             change = (-1 * weights * grad) + momentum
@@ -127,10 +152,13 @@ class GD:
         record = []
 
         for i in range(self.n):
+
+            Xi, yi = self._make_minibatch(X,y)
+
             penalty = self.lamb * theta
             momentum = self.mass * change
 
-            grad = 2 * ((1 / y.shape[0]) * X.T @ (X @ theta - y) + penalty)
+            grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
             r = decay * r + (1 - decay) * grad**2
 
             weights = self.eta / np.sqrt(delta + r)
@@ -149,8 +177,9 @@ class GD:
 
         return theta
 
-    def ADAM(self, X, y, delta=1e-8, decay_1=0.9, decay_2=0.9):
-        theta = np.zeros(X.shape[1])
+    def ADAM(self, X, y, delta=1e-8, decay_1=0.9, decay_2=0.9, m: int = 1):
+        n, p = X.shape
+        theta = np.zeros(p)
         change = np.zeros_like(theta)
         s = np.zeros_like(theta)  # first moment estimates
         r = np.zeros_like(theta)  # second moment estimates
@@ -158,11 +187,14 @@ class GD:
         record = []
 
         for i in range(self.n):
+
+            Xi, yi = self._make_minibatch(X,y)
+
             penalty = self.lamb * theta
             momentum = self.mass * change
             t = i + 1
 
-            grad = 2 * ((1 / y.shape[0]) * X.T @ (X @ theta - y) + penalty)
+            grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
             s = decay_1 * s + (1 - decay_1) * grad
             r = decay_2 * r + (1 - decay_2) * grad**2
 

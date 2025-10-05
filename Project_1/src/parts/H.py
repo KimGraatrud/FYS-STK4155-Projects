@@ -60,17 +60,11 @@ def k_fold_CV(x: int, y: int, k: int,
             OLS_prediction = Xtest @ OLS_beta
             OLSfoldMSE[j] = utils.MSE(y_test, OLS_prediction)
 
-            best_MSE_R = np.inf
-            best_lambda_R = None
-
             for ri, lamb in enumerate(lamb_R):
 
                 Ridge_beta = regression.ridge(Xtrain, y_train, lam=lamb)
                 Ridge_prediction = Xtest @ Ridge_beta
                 RidgefoldMSE[ri, j] = utils.MSE(y_test, Ridge_prediction)
-
-            best_MSE_L = np.inf
-            best_lambda_L = None
 
             for li, lamb in enumerate(lamb_L):
 

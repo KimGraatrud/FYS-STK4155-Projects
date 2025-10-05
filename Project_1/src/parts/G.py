@@ -53,8 +53,6 @@ def main():
     )
 
     plot_bootstrapdegree(degrees, MSE, bias, variance)
-    
-
 
 if __name__ == "__main__":
     main()

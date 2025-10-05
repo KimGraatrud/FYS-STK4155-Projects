@@ -19,7 +19,9 @@ def heatmap():
     """
     n = 1e3
     x, y = create_data(n)
-    x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8)
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, train_size=0.8, random_state=utils.RANDOM_SEED
+    )
 
     degrees = np.arange(1, 15)
     etas = np.logspace(-6, -1, 15)  # learning rates

@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from src.parts import A, B, C, D, G, H
+from src.parts import A, B, D, H, G
 
 plt.rcParams.update(
     {
@@ -42,21 +42,20 @@ plt.rcParams.update(
     }
 )
 
-# TODO: Part A doesnt run 
-"""
-File "/home/stevensj/Coding/UiO/STK-FYS4155/FYS-STK4155-Projects/Project_1/src/regression.py", line 6, in OLS
-    return np.linalg.inv(X.T @ X) @ X.T @ y
-           ~~~~~~~~~~~~~^^^^^^^^^
-  File "/home/stevensj/Coding/UiO/STK-FYS4155/stkfys-pyenv/lib/python3.13/site-packages/numpy/linalg/_linalg.py", line 669, in inv
-    ainv = _umath_linalg.inv(a, signature=signature)
-  File "/home/stevensj/Coding/UiO/STK-FYS4155/stkfys-pyenv/lib/python3.13/site-packages/numpy/linalg/_linalg.py", line 163, in _raise_linalgerror_singular
-    raise LinAlgError("Singular matrix")
-numpy.linalg.LinAlgError: Singular matrix
-"""
 
-# A.main()
-# B.main()
+A.main()
+print('A')
+B.main()
+print('b')
+
 # C.main()
-# D.main()
-# G.main()
-H.main()
+# print('c')
+
+
+D.main()
+print('d')
+
+G.main()
+print('g')
+
+# H.main()
