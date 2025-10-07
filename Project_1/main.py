@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from src.parts import A, B, D, H, G
+from src.parts import A, B, C, D, G, H
 
 plt.rcParams.update(
     {
@@ -42,20 +42,19 @@ plt.rcParams.update(
     }
 )
 
+def runparts():
+    A.main()
+    print('A done')
+    B.main()
+    print('B done')
+    C.main()
+    print('C done')
+    D.main()
+    print('D done')
+    G.main()
+    print('G done')
+    H.main()
+    print('h done')
 
-A.main()
-print('A')
-B.main()
-print('b')
-
-# C.main()
-# print('c')
-
-
-D.main()
-print('d')
-
-G.main()
-print('g')
-
-# H.main()
+H.main()
+# G.main()
