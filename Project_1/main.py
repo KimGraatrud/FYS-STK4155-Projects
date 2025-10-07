@@ -42,11 +42,21 @@ plt.rcParams.update(
     }
 )
 
-# test.main()
-# A.main()
-# B.main()
-# C.main()
-# D.main()
-# F.main()
-G.main()
-# H.main()
+
+def runparts():
+    A.main()
+    print("A done")
+    B.main()
+    print("B done")
+    C.main()
+    print("C done")
+    D.main()
+    print("D done")
+    G.main()
+    print("G done")
+    H.main()
+    print("h done")
+
+
+H.main()
+# G.main()

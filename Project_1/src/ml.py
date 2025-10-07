@@ -247,7 +247,6 @@ class GD:
         return theta
 
     def Lasso(self):
-        # TODO: fix me
         n, p = self.X.shape
         theta = np.zeros(p)
 
@@ -255,7 +254,14 @@ class GD:
 
         for i in range(self.n):
 
+
             X, y = self._make_minibatch()
+
+            # Ensure 1D target
+            if y.ndim == 2 and y.shape[1] == 1:
+                y = y.ravel()
+            elif y.ndim != 1:
+                y = np.reshape(y, (-1,))  # fallback, 1D
 
             S = np.eye(len(theta))
             if self.has_interecpt:  # don't penalize the intercept
