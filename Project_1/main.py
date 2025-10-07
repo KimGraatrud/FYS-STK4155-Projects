@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from src.parts import A, B, D, H, G
+from src.parts import A, B, C, D, F, G, H
 
 plt.rcParams.update(
     {
@@ -21,10 +21,10 @@ plt.rcParams.update(
         "ytick.minor.width": 0.3,
         "xtick.minor.width": 0.3,
         # Fonts
-        "text.usetex": False,       # Got some wierd latex error when i had this enabled...
-        # "mathtext.fontset": "cm",
-        # "font.family": "serif",
-        # "font.serif": "Computer Modern Roman",
+        "text.usetex": True,
+        "mathtext.fontset": "cm",
+        "font.family": "serif",
+        "font.serif": "Computer Modern Roman",
         "legend.fontsize": 10,
         "axes.titlesize": 10,
         "figure.titlesize": 10,
@@ -42,20 +42,11 @@ plt.rcParams.update(
     }
 )
 
-
-A.main()
-print('A')
-B.main()
-print('b')
-
+# test.main()
+# A.main()
+# B.main()
 # C.main()
-# print('c')
-
-
-D.main()
-print('d')
-
+# D.main()
+# F.main()
 G.main()
-print('g')
-
 # H.main()

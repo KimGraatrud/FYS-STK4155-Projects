@@ -105,13 +105,15 @@ class GD:
         record = []  # recording of parameters at each step of the gradient descent
 
         for i in range(self.n):
+            # if i % 1e3 == 0:
+            #     print(i)
 
             Xi, yi = self._make_minibatch()
 
             penalty = self._calc_penalty(theta)
             momentum = self.mass * change
 
-            grad = ((2 / len(yi)) * Xi.T @ (Xi @ theta - yi)) + penalty
+            grad = 2 * ((1 / len(yi)) * Xi.T @ (Xi @ theta - yi) + penalty)
             change = (-1 * self.eta * grad) + momentum
             theta += change
 
@@ -167,6 +169,9 @@ class GD:
         r = np.zeros_like(theta)
 
         record = []
+        r_record = []
+        sqrt = []
+        grads = []
 
         for i in range(self.n):
 
@@ -184,12 +189,21 @@ class GD:
 
             if self.verbose:
                 record.append(np.copy(theta))
+                r_record.append(np.copy(r))
+                sqrt.append(np.sqrt(delta + r))
+                grads.append(np.copy(grad**2))
 
             if (self.atol is not None) and np.linalg.norm(grad) < self.atol:
                 break
 
         if self.verbose:
-            stats = {"n": i + 1, "record": np.array(record)}
+            stats = {
+                "n": i + 1,
+                "record": np.array(record),
+                "r": np.array(r_record),
+                "sqrt": np.array(sqrt),
+                "grads": np.array(grads),
+            }
             return theta, stats
 
         return theta

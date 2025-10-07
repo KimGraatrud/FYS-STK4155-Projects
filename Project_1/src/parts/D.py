@@ -113,7 +113,7 @@ def compare_momentum():
 
     cmap = plt.colormaps["Oranges"]
     norm = mpl.colors.Normalize(vmin=-0.5, vmax=1.5)
-
+    # TODO: mass = 0 for OLS
     for m in masses:
         # OLS w/ momentum
         gd.lamb = 0
