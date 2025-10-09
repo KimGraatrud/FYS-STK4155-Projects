@@ -58,9 +58,4 @@ def runparts():
     print("h done")
 
 
-# runparts()
-# A.main()
-# B.main()
-# D.main()
-# H.main()
-G.main()
+runparts()

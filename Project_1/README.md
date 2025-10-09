@@ -49,8 +49,7 @@ To install with pip:
 pip install numpy matplotlib scikit-learn
 ```
 or equivalently in `Anaconda`.
----
 
 ## Generation of results
 
-
+To generate the results used in the paper, just import the files from `parts/` then run them. Or use the function provided in `main.py`, the functions have to be called from this directory, or else the relative paths will fail.
