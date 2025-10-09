@@ -12,7 +12,7 @@ Our repository has the following structure:
 ├── src/            # Source files
     └── parts/      # Data generation
 ├── doc/            # Documents
-    └── figures/    # Figures for the paper
+    └── Figures/    # Figures for the paper
 ├── main.py         # Main file
 └── README.md       # Project readme
 ```
@@ -24,7 +24,6 @@ Our repository has the following structure:
 - `main.py` is where we import and call the files from `parts/` and generate all the results.
 - `readme.md` is this file.
 
-
 ## Installation
 
 Clone the repository:
@@ -33,6 +32,7 @@ git clone https://github.com/KimGraatrud/FYS-STK4155-Projects.git
 cd FYS-STK4155-Projects/Project_1/
 ```
 
+Note: Before the code is run, ensure you have a `./data/` and a `./figures/` directory as that is where the output of `parts/` will be placed.
 
 ## Dependencies
 - Numpy
@@ -44,7 +44,8 @@ To install with pip:
 pip install numpy matplotlib scikit-learn
 ```
 or equivalently in `Anaconda`.
-
-
 ---
+
+## Generation of results
+
 
