@@ -1,6 +1,11 @@
 # FYS-STK4155 Project 1
 
-This is the repo contains all the code used to generate the results for our report.
+This is the repo contains all the code used to generate the results for our report. 
+
+`A Comparison of Linear Regression Techniques as Applied to Runge’s
+Function`
+
+Where we use and compare different linear regression techniques to study Runge’s function.
 
 
 ## Structure
