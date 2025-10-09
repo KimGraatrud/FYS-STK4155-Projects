@@ -6,7 +6,7 @@ plt.rcParams.update(
         # Figure
         "figure.dpi": 600,
         "figure.constrained_layout.use": True,
-        # "savefig.format": "svg",
+        "savefig.format": "svg",
         # Plotting
         "lines.linewidth": 0.6,
         # Axes
@@ -48,8 +48,8 @@ def runparts():
     print("A done")
     B.main()
     print("B done")
-    C.main()
-    print("C done")
+    # C.main()
+    # print("C done")
     D.main()
     print("D done")
     G.main()
@@ -58,5 +58,9 @@ def runparts():
     print("h done")
 
 
-H.main()
-# G.main()
+# runparts()
+# A.main()
+# B.main()
+# D.main()
+# H.main()
+G.main()

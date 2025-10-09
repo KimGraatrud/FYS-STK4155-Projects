@@ -32,7 +32,7 @@ def plot_bootstrapdegree(
 
     fig.legend(loc="outside lower center", ncols=2, frameon=False)
     fig.set_figheight(0.9 * utils.APS_COL_W)
-    fig.savefig(os.path.join(utils.FIGURES_URL, "BiasVarianceTradeoff"))
+    fig.savefig(os.path.join(utils.FIGURES_URL, "g_BiasVarianceTradeoff"))
     plt.close()
 
 
@@ -45,22 +45,22 @@ def plot_bias_var_tradeoff(
 
     fig, ax = plt.subplots(figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W))
 
-    ax.set_xlabel("Polynomial degree")
-    ax.set_ylabel("$\hat{MSE}$ | Bias | Var")
+    ax.set_xlabel("Polynomial degree ($N$)")
+    ax.set_ylabel("MSE / Bias / Var")
 
     cmap = plt.colormaps["Reds"]
     norm = mpl.colors.Normalize(vmin=0.5, vmax=1.2)
 
-    ax.set_title("Bias-Variance Tradeoff")
+    ax.set_title("Resampled Bias-Variance Tradeoff")
     ax.set_yscale("log")
 
-    ax.plot(degrees, MSE, label="$\hat{MSE}$")
-    ax.plot(degrees, bias, label="Bias")
-    ax.plot(degrees, variance, label="Var")
+    ax.plot(degrees, MSE, label=r"$\overline\mathrm{MSE}$")
+    ax.plot(degrees, bias, label=r"$\overline\mathrm{Bias}$")
+    ax.plot(degrees, variance, label=r"$\overline\mathrm{Var}$")
 
     ax.legend()
-    fig.set_figheight(0.9 * utils.APS_COL_W)
-    fig.savefig(os.path.join(utils.FIGURES_URL, "BiasVarianceTradeoff"))
+    # fig.set_figheight(0.9 * utils.APS_COL_W)
+    fig.savefig(os.path.join(utils.FIGURES_URL, "g_BiasVarianceTradeoff"))
     plt.close()
 
 
@@ -98,31 +98,41 @@ def bias_var_over_points():
     # Using our standard figuresize
     fig, ax = plt.subplots(figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W))
 
-    ax.set_xlabel("Number of datapoints")
-    ax.set_ylabel("$\hat{MSE}$ | Bias | Var")
+    ax.set_xlabel("Number of datapoints ($n$)")
+    ax.set_ylabel(r"$\mathrm{MSE}$ / ${\mathrm{Bias}}$ / $\mathrm{Var}$")
 
     cmap = plt.colormaps["Reds"]
     norm = mpl.colors.Normalize(vmin=0.5, vmax=1.2)
 
-    ax.set_title("Bias-Variance")
+    ax.set_title("Resampled Metrics vs. Data Size")
     ax.set_yscale("log")
     ax.set_xscale("log")
 
-    ax.plot(datapoints, teMSE, label="MSE")
-    ax.plot(datapoints, teBias, label="Bias", linestyle="dashed")
-    ax.plot(datapoints, teVar, label="Var")
+    ax.plot(datapoints, teMSE, label=r"$\overline\mathrm{MSE}$")
+    ax.plot(datapoints, teBias, label=r"$\overline\mathrm{Bias}$", linestyle="dashed")
+    ax.plot(datapoints, teVar, label=r"$\overline\mathrm{Var}$")
 
     ax.legend()
-    fig.set_figheight(0.9 * utils.APS_COL_W)
-    fig.savefig(os.path.join(utils.FIGURES_URL, "BiasVarianceTradeoffNPoints"))
+    fig.savefig(os.path.join(utils.FIGURES_URL, "g_BiasVarianceTradeoffNPoints"))
     plt.close()
 
 
 def bias_var_over_deg():
-
     n_datapoints = int(1e2)
     maxdeg = 10
     x, y = create_data(n_datapoints)
+
+    strap = resampling.resampling_methods(x, y, maxdeg, 0, 0)
+
+    nbootstraps = int(1e3)
+    degrees, Boot_result = strap.BootstrapOLS(
+        nbootstraps, verbose=False, replacement=True
+    )
+
+    trMSE, trBias, trVar = Boot_result["Train"]
+    teMSE, teBias, teVar = Boot_result["Test"]
+
+    plot_bias_var_tradeoff(degrees, teMSE, teBias, teVar)
 
 
 def test_v_train():
@@ -158,8 +168,8 @@ def test_v_train():
     ax.plot(degs, test_mses, label="Testing")
 
     ax.set_ylabel("MSE")
-    ax.set_xlabel("Polynomial degree")
-    ax.set_title("MSE vs. Polynomial degree")
+    ax.set_xlabel("Polynomial degree ($N$)")
+    ax.set_title("MSE vs. Polynomial Degree")
 
     # ax.set_xscale("log")
     ax.set_yscale("log")
@@ -171,31 +181,6 @@ def test_v_train():
 
 def main():
     test_v_train()
-    # n_datapoints = int(1e3)
-    # maxdeg       = 18
-    # x, y = create_data(n_datapoints)
-
-    # strap = resampling.resampling()
-
-    strap = resampling.resampling_methods(x, y, maxdeg, 0, 0)
-    # n_bootstrap = int(1e2)
-    # degrees, MSE, bias, variance = strap.BootstrapOLS(
-    #     n_bootstrap, maxdeg, x, y, verbose=True
-    # )
-
-    nbootstraps = int(1e3)
-    degrees, Boot_result = strap.BootstrapOLS(
-        nbootstraps, verbose=False, replacement=True
-    )
-    # plot_bootstrapdegree(degrees, MSE, bias, variance)
-
-    trMSE, trBias, trVar = Boot_result["Train"]
-    teMSE, teBias, teVar = Boot_result["Test"]
-
-    plot_bias_var_tradeoff(degrees, teMSE, teBias, teVar)
-
-
-def main():
     bias_var_over_points()
     bias_var_over_deg()
 

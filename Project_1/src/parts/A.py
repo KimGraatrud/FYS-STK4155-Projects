@@ -9,11 +9,17 @@ from .. import regression
 rng = np.random.default_rng(seed=utils.RANDOM_SEED)
 
 
-def create_data(n=1e2):
+def create_data(n=1e2, split=False):
     x = np.linspace(-1, 1, np.int32(n))
     y_base = utils.runge(x)
     noise = 0.05 * rng.normal(size=x.shape[0])
     y = y_base + noise
+
+    if split:
+        xtrain, xtest, ytrain, ytest = train_test_split(
+            x, y, train_size=0.8, random_state=utils.RANDOM_SEED
+        )
+        return xtrain, ytrain
 
     return x, y
 

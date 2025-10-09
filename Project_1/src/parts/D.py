@@ -21,7 +21,7 @@ def setup_comparison():
     n_max = 2e4  # iterations
 
     N = 1e2
-    x, y = create_data(N)
+    x, y = create_data(N, split=True)
     X = utils.poly_features(x, degree, intercept=True)
 
     gd = ml.GD(X, y, verbose=True, eta=1e-1, atol=None, n_iterations=n_max)

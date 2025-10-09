@@ -254,7 +254,6 @@ class GD:
 
         for i in range(self.n):
 
-
             X, y = self._make_minibatch()
 
             # Ensure 1D target
