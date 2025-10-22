@@ -1,3 +1,6 @@
+# stupid mac stuff
+.DS_Store
+
 # generated results
 figures/
 data/
