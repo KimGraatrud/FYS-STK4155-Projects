@@ -24,6 +24,10 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
+def sigmoid_der(x):
+    return np.exp(-x) / (1 + np.exp(-x)) ** 2
+
+
 def ReLU(x):
     return np.where(x > 0, x, 0)
 
