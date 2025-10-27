@@ -44,5 +44,7 @@ def mse_der(predict, target):
     return (2 / len(predict)) * (predict - target)
 
 
+
+
 def train_test_split(x, y):
     return model_selection.train_test_split(x, y, train_size=0.8, random_state=SEED)
