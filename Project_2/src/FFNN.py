@@ -50,20 +50,10 @@ class FFNN:
         """
 
         for i, (W, b) in enumerate(self.layers):
-            # print(
-            #     "np.sum((layer_grads[i][0]), axis=2).T",
-            #     np.sum((layer_grads[i][0]), axis=2).T,
-            # )
-            # print(
-            #     "self.eta * np.sum((layer_grads[i][0]), axis=2).T,",
-            #     self.eta * np.sum((layer_grads[i][0]), axis=2).T,
-            # )
             self.layers[i] = (
                 W - self.eta * np.sum((layer_grads[i][0]), axis=2).T,
                 b - self.eta * np.sum((layer_grads[i][1]), axis=1),
             )
-            # print("self.layers[i]", self.layers[i][0])
-            # raise
 
     def _create_layers(self):
         layers = []
@@ -116,7 +106,7 @@ class FFNN:
         # Set the train flag, so __call__ doesn't warn.
         self.trained = True
 
-        for i in range(n_iter):
+        for i in range(int(n_iter)):
             grads = self._Backpropagation(inputs, targets)
             self._update_weights(grads)
 
