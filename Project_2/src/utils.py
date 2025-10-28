@@ -52,7 +52,10 @@ def sigmoid(x):
 
 
 def sigmoid_der(x):
-    return np.exp(-x) / (1 + np.exp(-x)) ** 2
+    # for performance, only calc. once
+    exp = np.exp(-x)
+
+    return exp / (1 + exp) ** 2
 
 
 def ReLU(x):

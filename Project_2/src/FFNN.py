@@ -13,6 +13,7 @@ class FFNN:
         activation_ders,
         cost_fun,
         cost_der,
+        batch_size=None,
     ):
 
         self.network_input_size = network_input_size
@@ -22,17 +23,28 @@ class FFNN:
         self.activation_ders = activation_ders
         self.cost_fun = cost_fun
         self.cost_der = cost_der
+        self.batch_size = batch_size
+
         self.trained = False
 
         self._create_layers()
 
-    def cost(self, inputs, targets):
-        pass
+    def _sample_indices(self, inputs):
+        """
+        Returns the indices for a sample of frac% of inputs
+        """
+        high = inputs.shape[1]
+        if self.batch_size is None:
+            return np.arange(high)
+
+        return utils.rng.integers(high, size=self.batch_size)
 
     def _feed_forward_saver(self, inputs, verbose=False):
         layer_inputs = []
         zs = []
+
         a = inputs
+
         for (W, b), activation_func in zip(self.layers, self.activation_funcs):
             layer_inputs.append(a)
             z = W.T @ a + b[:, None]
@@ -69,7 +81,6 @@ class FFNN:
         self.layers = layers
 
     def _Backpropagation(self, inputs, targets):
-
         # Run to generate layer_input, activation_der, and zs
         layer_inputs, zs = self._feed_forward_saver(inputs)
 
@@ -107,7 +118,15 @@ class FFNN:
         self.trained = True
 
         for i in range(int(n_iter)):
-            grads = self._Backpropagation(inputs, targets)
+            # Sample the data
+            sample = self._sample_indices(inputs)
+            inp = inputs[:, sample]
+            tar = targets[:, sample]
+
+            # Backpropagation
+            grads = self._Backpropagation(inp, tar)
+
+            # updat weights
             self._update_weights(grads)
 
     def __call__(self, test_data):

@@ -14,8 +14,9 @@ def one_der(x):
 
 
 def main():
-    dim = 1
-    x, y = utils.generate_regression_data(N=1000, dim=dim, noise_std=0.05)
+    dim = 2
+    N = 10000
+    x, y = utils.generate_regression_data(N=N, dim=dim, noise_std=0.05)
 
     # quick scaling
     y -= np.min(y)
@@ -28,18 +29,19 @@ def main():
         activation_ders=[utils.sigmoid_der, utils.ReLU_der, utils.sigmoid_der],
         cost_fun=utils.mse,
         cost_der=utils.mse_der,
-        eta=1e-4,
+        eta=1e-2,
+        batch_size=200,
     )
 
-    nn.train(x, y, n_iter=4e4)
+    nn.train(x, y, n_iter=4e5)
 
     print("trained!")
 
-    # instead of splitting into train & test, right now it's
-    # easier to just create new data for testing
-    x_test, y_test = utils.generate_regression_data(N=200, dim=dim, noise_std=0.05)
+    # # instead of splitting into train & test, right now it's
+    # # easier to just create new data for testing
+    x_test, y_test = utils.generate_regression_data(N=30, dim=dim, noise_std=0.05)
 
-    # quick scaling
+    # # quick scaling
     y_test -= np.min(y_test)
     y_test /= np.max(y_test)
 
