@@ -1,4 +1,7 @@
+import os
+import pickle
 import numpy as np
+from sklearn.datasets import fetch_openml
 from sklearn import model_selection
 
 FIGURES_URL = "./figures/"
@@ -45,6 +48,28 @@ def generate_regression_data(N=1000, noise_std=0.1, dim=1):
     y = np.expand_dims(y, axis=0)
 
     return (x, y)
+
+
+def load_digit_dataset():
+    dataset = "mnist_784"
+
+    digit_path = os.path.join(DATA_URL, f"{dataset}.pkl")
+
+    if not os.path.exists(digit_path):
+        print("fetching")
+        # fetch data
+        mnist = fetch_openml(dataset, version=1, as_frame=False, parser="auto")
+
+        # save a local copy
+        with open(digit_path, mode="xb") as f:
+            pickle.dump(mnist, f)
+    else:
+        print("opening")
+        # load local copy
+        with open(digit_path, mode="rb") as f:
+            mnist = pickle.load(f)
+
+    return mnist
 
 
 def sigmoid(x):

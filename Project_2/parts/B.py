@@ -33,15 +33,15 @@ def main():
         batch_size=200,
     )
 
-    nn.train(x, y, n_iter=4e5)
+    nn.train(x, y, n_iter=3e5)
 
     print("trained!")
 
-    # # instead of splitting into train & test, right now it's
-    # # easier to just create new data for testing
+    # instead of splitting into train & test, right now it's
+    # easier to just create new data for testing
     x_test, y_test = utils.generate_regression_data(N=30, dim=dim, noise_std=0.05)
 
-    # # quick scaling
+    # quick scaling
     y_test -= np.min(y_test)
     y_test /= np.max(y_test)
 
