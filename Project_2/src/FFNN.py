@@ -20,7 +20,7 @@ class FFNN:
         self.layer_output_sizes = layer_output_sizes
         self.activation_funcs = activation_funcs
         self.activation_ders = activation_ders
-        self.cost_fun = cost_fun
+        self.cost_fun = cost_fun 
         self.cost_der = cost_der
         self.batch_size = batch_size
 

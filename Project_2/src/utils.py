@@ -3,6 +3,9 @@ import pickle
 import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn import model_selection
+from sklearn.preprocessing import scale
+from sklearn.metrics import accuracy_score
+
 
 FIGURES_URL = "./figures/"
 DATA_URL = "./data/"
@@ -126,15 +129,30 @@ def mse_der(predict, target):
     return (2 / len(predict)) * (predict - target)
 
 
-def class_cost(predict, target):
-    # This assumes that the final layer of the network
-    # has a softmax activation and that the
-    # targets are one-hot
-    return predict * target
+def train_test_split(x, y):
+    return model_selection.train_test_split(x, y, train_size=0.8, random_state=SEED)
 
 
-def class_cost_der(predict, target):
-    # This assumes that the final layer of the network
-    # has a softmax activation and that the
-    # targets are one-hot
-    return target
+def scale_data(X):
+    """
+    Scales the data using using the common convention.
+    Works for a basis expansion X and raw data x.
+    """
+    mean = X.mean(axis=0, keepdims=True)
+    std = X.std(axis=0, keepdims=True)
+    nonzero_std = np.where(std == 0, 1.0, std)
+    X_scaled = (X - mean) / nonzero_std
+    scaler = (mean, nonzero_std)
+    return X_scaled, scaler
+
+
+def accuracy(predictions, targets):
+    """
+    Computes the accuracy of a model.
+    Lifted from Exercises week 42.
+    """
+    one_hot_predictions = np.zeros(predictions.shape)
+
+    for i, prediction in enumerate(predictions):
+        one_hot_predictions[i, np.argmax(prediction)] = 1
+    return accuracy_score(one_hot_predictions, targets)
