@@ -13,6 +13,8 @@ class FFNN:
         activation_ders,
         cost_fun,
         cost_der,
+        lam1,
+        lam2
     ):
 
         self.network_input_size = network_input_size
@@ -20,7 +22,7 @@ class FFNN:
         self.layer_output_sizes = layer_output_sizes
         self.activation_funcs = activation_funcs
         self.activation_ders = activation_ders
-        self.cost_fun = cost_fun
+        self.cost_fun = cost_fun 
         self.cost_der = cost_der
         self.trained = False
 
@@ -50,20 +52,10 @@ class FFNN:
         """
 
         for i, (W, b) in enumerate(self.layers):
-            # print(
-            #     "np.sum((layer_grads[i][0]), axis=2).T",
-            #     np.sum((layer_grads[i][0]), axis=2).T,
-            # )
-            # print(
-            #     "self.eta * np.sum((layer_grads[i][0]), axis=2).T,",
-            #     self.eta * np.sum((layer_grads[i][0]), axis=2).T,
-            # )
             self.layers[i] = (
                 W - self.eta * np.sum((layer_grads[i][0]), axis=2).T,
                 b - self.eta * np.sum((layer_grads[i][1]), axis=1),
             )
-            # print("self.layers[i]", self.layers[i][0])
-            # raise
 
     def _create_layers(self):
         layers = []
