@@ -4,6 +4,7 @@
 # generated results
 figures/
 data/
+profiles/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
