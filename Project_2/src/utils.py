@@ -50,26 +50,36 @@ def generate_regression_data(N=1000, noise_std=0.1, dim=1):
     return (x, y)
 
 
-def load_digit_dataset():
-    dataset = "mnist_784"
+def load_openml_dataset(dataset="mnist_784"):
+    path = os.path.join(DATA_URL, f"{dataset}.pkl")
 
-    digit_path = os.path.join(DATA_URL, f"{dataset}.pkl")
-
-    if not os.path.exists(digit_path):
-        print("fetching")
+    if not os.path.exists(path):
         # fetch data
         mnist = fetch_openml(dataset, version=1, as_frame=False, parser="auto")
 
         # save a local copy
-        with open(digit_path, mode="xb") as f:
+        with open(path, mode="xb") as f:
             pickle.dump(mnist, f)
     else:
-        print("opening")
         # load local copy
-        with open(digit_path, mode="rb") as f:
+        with open(path, mode="rb") as f:
             mnist = pickle.load(f)
 
     return mnist
+
+
+def onehot(y, C=10):
+    """
+    Sets up the appropriate target matrix for a classification problem
+
+    y: Array of shape (n,) with each element an integer in [0,C)
+    C: Number of catagories (Default 10)
+    """
+    out = np.zeros(shape=(C, len(y)))
+    for i, c in enumerate(y):
+        out[c, i] = 1
+
+    return out
 
 
 def sigmoid(x):
@@ -77,8 +87,7 @@ def sigmoid(x):
 
 
 def sigmoid_der(x):
-    # for performance, only calc. once
-    exp = np.exp(-x)
+    exp = np.exp(-x)  # for performance, only calc. once
 
     return exp / (1 + exp) ** 2
 
@@ -91,9 +100,41 @@ def ReLU_der(x):
     return np.where(x > 0, 1, 0)
 
 
+def softmax(x):
+    exp = np.exp(x)
+    return exp / np.sum(exp, axis=0)
+
+
+def softmax_der(x):
+    sm = softmax(x)
+
+    I = np.identity(x.shape[0])
+
+    der = sm[:, None, :] * sm[None, :, :]
+    print("der", der.shape)
+
+    # raise
+
+    return der
+
+
 def mse(predict, target):
     return np.sum((target - predict) ** 2) / len(target)
 
 
 def mse_der(predict, target):
     return (2 / len(predict)) * (predict - target)
+
+
+def class_cost(predict, target):
+    # This assumes that the final layer of the network
+    # has a softmax activation and that the
+    # targets are one-hot
+    return predict * target
+
+
+def class_cost_der(predict, target):
+    # This assumes that the final layer of the network
+    # has a softmax activation and that the
+    # targets are one-hot
+    return target

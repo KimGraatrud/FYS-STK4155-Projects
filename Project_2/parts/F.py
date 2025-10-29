@@ -2,12 +2,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from src.FFNN import FFNN
+from src.ClassifierNN import ClassifierNN
 from src import utils
 
 
 def main():
     # Fetch the MNIST dataset
-    mnist = utils.load_digit_dataset()
+    mnist = utils.load_openml_dataset()
 
     # Extract data (features) and target (labels)
     X = mnist["data"]
@@ -15,13 +16,21 @@ def main():
 
     # Format data for our network
     X = X.T / 255.0
-    y = np.expand_dims(y, axis=0)
-    print(X.shape)
-    print(y.shape)
+    y = utils.onehot(np.int32(y))
 
-    # nn = FFNN(
-    #     network_input_size=
-    # )
+    # TODO: train/test split
+
+    nn = ClassifierNN(
+        network_input_size=X.shape[0],
+        classes=y.shape[0],
+        layer_output_sizes=[30, 30, 15],
+        activation_funcs=[utils.sigmoid, utils.ReLU, utils.sigmoid],
+        activation_ders=[utils.sigmoid_der, utils.ReLU_der, utils.sigmoid_der],
+        eta=1e-4,
+        batch_size=100,
+    )
+
+    nn.train(X, y, n_iter=1e3)
 
     # fig, ax = plt.subplots()
 

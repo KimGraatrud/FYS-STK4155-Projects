@@ -3,7 +3,6 @@ from . import utils
 
 
 class FFNN:
-
     def __init__(
         self,
         network_input_size,
@@ -11,8 +10,8 @@ class FFNN:
         layer_output_sizes,
         activation_funcs,
         activation_ders,
-        cost_fun,
-        cost_der,
+        cost_fun=utils.mse,
+        cost_der=utils.mse_der,
         batch_size=None,
     ):
 
