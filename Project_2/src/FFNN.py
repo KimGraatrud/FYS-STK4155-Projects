@@ -20,7 +20,7 @@ class FFNN:
         self.layer_output_sizes = layer_output_sizes
         self.activation_funcs = activation_funcs
         self.activation_ders = activation_ders
-        self.cost_fun = cost_fun 
+        self.cost_fun = cost_fun
         self.cost_der = cost_der
         self.batch_size = batch_size
 
@@ -38,7 +38,7 @@ class FFNN:
 
         return utils.rng.integers(high, size=self.batch_size)
 
-    def _feed_forward_saver(self, inputs, verbose=False):
+    def _feed_forward_saver(self, inputs):
         layer_inputs = []
         zs = []
 
@@ -49,8 +49,6 @@ class FFNN:
             z = W.T @ a + b[:, None]
             a = activation_func(z)
             zs.append(z)
-            if verbose:
-                print(f"a: {a.shape}, W: {W.shape}, b: {b.shape}")
 
         layer_inputs.append(a)
         return layer_inputs, zs
@@ -59,7 +57,6 @@ class FFNN:
         """
         Updates the weights after a backpropagation cycle.
         """
-
         for i, (W, b) in enumerate(self.layers):
             self.layers[i] = (
                 W - self.eta * np.sum((layer_grads[i][0]), axis=2).T,
@@ -73,8 +70,12 @@ class FFNN:
         for layer_output_size in self.layer_output_sizes:
             W = utils.rng.random(size=(i_size, layer_output_size))
             b = utils.rng.random(size=layer_output_size)
-            layers.append((W, b))
 
+            # Normalize weights so the sums don't explode
+            W = W / np.sum(W)
+            b = b / np.sum(b)
+
+            layers.append((W, b))
             i_size = layer_output_size
 
         self.layers = layers
@@ -108,7 +109,7 @@ class FFNN:
 
         return layer_grads
 
-    def train(self, inputs, targets, n_iter=10000):
+    def train(self, inputs, targets, n_iter=10000, callback=None):
         """
         Does backpropagation and updates the weights and biases for all layers
         """
@@ -127,6 +128,9 @@ class FFNN:
 
             # updat weights
             self._update_weights(grads)
+
+            if callback is not None:
+                callback(i)
 
     def __call__(self, test_data):
         """

@@ -3,7 +3,6 @@ import pickle
 import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn import model_selection
-from sklearn.preprocessing import scale
 from sklearn.metrics import accuracy_score
 
 
@@ -108,29 +107,12 @@ def softmax(x):
     return exp / np.sum(exp, axis=0)
 
 
-def softmax_der(x):
-    sm = softmax(x)
-
-    I = np.identity(x.shape[0])
-
-    der = sm[:, None, :] * sm[None, :, :]
-    print("der", der.shape)
-
-    # raise
-
-    return der
-
-
 def mse(predict, target):
     return np.sum((target - predict) ** 2) / len(target)
 
 
 def mse_der(predict, target):
     return (2 / len(predict)) * (predict - target)
-
-
-def train_test_split(x, y):
-    return model_selection.train_test_split(x, y, train_size=0.8, random_state=SEED)
 
 
 def scale_data(X):
@@ -146,13 +128,16 @@ def scale_data(X):
     return X_scaled, scaler
 
 
+def correct(predictions, targets):
+    p = np.argmax(predictions, axis=0)
+    t = np.argmax(targets, axis=0)
+
+    return np.equal(p, t)
+
+
 def accuracy(predictions, targets):
     """
-    Computes the accuracy of a model.
-    Lifted from Exercises week 42.
+    Computes the fraction of predictions which matched targets
     """
-    one_hot_predictions = np.zeros(predictions.shape)
-
-    for i, prediction in enumerate(predictions):
-        one_hot_predictions[i, np.argmax(prediction)] = 1
-    return accuracy_score(one_hot_predictions, targets)
+    success = correct(predictions, targets)
+    return np.sum(success) / predictions.shape[1]

@@ -40,7 +40,6 @@ class ClassifierNN(FFNN):
                 (W, b) = self.layers[i + 1]
                 dC_da = W @ dC_dz
                 dC_dz = dC_da * activation_der(z)
-
             dC_dW = dC_dz[:, None, :] * layer_input[None, :, :]
             dC_db = dC_dz
 
