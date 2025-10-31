@@ -36,8 +36,8 @@ def softmax(x):
 
 
 def mse(predict, target):
-    return np.sum((target - predict) ** 2) / len(target)
+    return np.sum((target - predict) ** 2) / np.size(target)
 
 
 def mse_der(predict, target):
-    return (2 / len(predict)) * (predict - target)
+    return (2 / np.size(predict)) * (predict - target)

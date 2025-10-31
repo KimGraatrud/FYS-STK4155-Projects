@@ -73,7 +73,7 @@ class FFNN:
         layers = []
 
         i_size = self.network_input_size
-        for layer_output_size in self.layer_output_sizes:
+        for layer_output_size in np.int32(self.layer_output_sizes):
             W = utils.rng.random(size=(i_size, layer_output_size))
             b = utils.rng.random(size=layer_output_size)
 

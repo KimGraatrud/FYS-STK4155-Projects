@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 from src import utils
-from parts import B, F
+from parts import B, F, weekly
 
 plt.rcParams.update(
     {
@@ -20,4 +20,5 @@ if not os.path.exists(utils.DATA_URL):
     os.mkdir(utils.DATA_URL)
 
 # B.main()
-F.main()
+# F.main()
+weekly.main()
