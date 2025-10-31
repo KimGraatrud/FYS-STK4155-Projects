@@ -36,7 +36,7 @@ Our repository has the following structure:
 Clone the repository:
 ```bash
 git clone https://github.com/KimGraatrud/FYS-STK4155-Projects.git
-cd FYS-STK4155-Projects/Project_1/
+cd FYS-STK4155-Projects/Project_2/
 ```
 
 Note: Before the code is run, ensure you have a `./data/` and a `./figures/` directory as that is where the output of `parts/` will be placed.
