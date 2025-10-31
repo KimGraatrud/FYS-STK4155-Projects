@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from src import utils
+from src import utils, costs
 from src.FFNN import FFNN
 
 
@@ -14,7 +14,7 @@ def one_der(x):
 
 
 def main():
-    dim = 2
+    dim = 1
     N = 10000
     x, y = utils.generate_regression_data(N=N, dim=dim, noise_std=0.05)
 
@@ -22,24 +22,42 @@ def main():
     y -= np.min(y)
     y /= np.max(y)
 
+    # der = None
+    # der = lambda X: costs.L1_der(X, lam=3e-5)
+    der = lambda X: costs.L2_der(X, lam=1e-4)
+
     nn = FFNN(
         network_input_size=x.shape[0],
-        layer_output_sizes=[5, 5, y.shape[0]],
-        activation_funcs=[utils.sigmoid, utils.ReLU, utils.sigmoid],
-        activation_ders=[utils.sigmoid_der, utils.ReLU_der, utils.sigmoid_der],
-        cost_fun=utils.mse,
-        cost_der=utils.mse_der,
-        eta=1e-2,
-        batch_size=200,
+        layer_output_sizes=[
+            5,
+            y.shape[0],
+        ],
+        activation_funcs=[
+            costs.sigmoid,
+            # costs.ReLU,
+            costs.sigmoid,
+        ],
+        activation_ders=[
+            costs.sigmoid_der,
+            # costs.ReLU_der,
+            costs.sigmoid_der,
+        ],
+        cost_fun=costs.mse,
+        cost_der=costs.mse_der,
+        eta=2e-1,
+        batch_size=100,
+        regularization_der=der,
     )
 
-    nn.train(x, y, n_iter=3e5)
+    def callback(i):
+        if i % 1000 == 0:
+            print(i)
 
-    print("trained!")
+    nn.train(x, y, n_iter=1e3, callback=callback)
 
     # instead of splitting into train & test, right now it's
     # easier to just create new data for testing
-    x_test, y_test = utils.generate_regression_data(N=30, dim=dim, noise_std=0.05)
+    x_test, y_test = utils.generate_regression_data(N=100, dim=dim, noise_std=0.05)
 
     # quick scaling
     y_test -= np.min(y_test)

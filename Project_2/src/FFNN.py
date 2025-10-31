@@ -1,5 +1,5 @@
 import numpy as np
-from . import utils
+from . import utils, costs
 
 
 class FFNN:
@@ -10,10 +10,15 @@ class FFNN:
         layer_output_sizes,
         activation_funcs,
         activation_ders,
-        cost_fun=utils.mse,
-        cost_der=utils.mse_der,
+        cost_fun=costs.mse,
+        cost_der=costs.mse_der,
         batch_size=None,
+        regularization_der=None,
     ):
+        """
+        cost_der(predict, target)
+        regularization_der(W)
+        """
 
         self.network_input_size = network_input_size
         self.eta = eta
@@ -23,6 +28,7 @@ class FFNN:
         self.cost_fun = cost_fun
         self.cost_der = cost_der
         self.batch_size = batch_size
+        self.regularization_der = regularization_der
 
         self.trained = False
 
@@ -91,6 +97,7 @@ class FFNN:
             layer_input = layer_inputs[i]
             predict = layer_inputs[i + 1]
             activation_der = self.activation_ders[i]
+            (W, b) = self.layers[i]
             z = zs[i]
 
             if i == len(self.layers) - 1:
@@ -98,12 +105,19 @@ class FFNN:
                 dC_da = self.cost_der(predict, targets)
             else:
                 # For other layers we build on previous z derivative, as dC_da(i) = dC_dz(i+1) * dz(i+1)_da(i)
-                (W, b) = self.layers[i + 1]
-                dC_da = W @ dC_dz
+                (W_prev, _) = self.layers[i + 1]
+                dC_da = W_prev @ dC_dz
 
             dC_dz = dC_da * activation_der(z)
             dC_dW = dC_dz[:, None, :] * layer_input[None, :, :]
             dC_db = dC_dz
+
+            # regularization
+            if self.regularization_der is not None:
+                dW = self.regularization_der(W).T
+                db = self.regularization_der(b)
+                dC_dW = dC_dW + dW[:, :, None]
+                dC_db = dC_db + db[:, None]
 
             layer_grads[i] = (dC_dW, dC_db)
 
