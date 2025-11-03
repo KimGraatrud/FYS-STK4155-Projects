@@ -24,9 +24,10 @@ def main():
     y_train = utils.onehot(np.int32(y_train))
     y_test = utils.onehot(np.int32(y_test))
 
-    # der = None
+    # Define a derivative for regularization
+    der = None
     # der = lambda X: costs.L1_der(X, lam=3e-5)
-    der = lambda X: costs.L2_der(X, lam=1e-4)
+    # der = lambda X: costs.L2_der(X, lam=1e-4)
 
     nn = ClassifierNN(
         network_input_size=X_train.shape[0],
@@ -43,19 +44,19 @@ def main():
             costs.ReLU_der,
             # costs.ReLU_der,
         ],
-        eta=1e-3,
-        batch_size=150,
+        eta=1e-4,
+        batch_size=20,
         regularization_der=der,
+        descent_method="adam",
+        decay_rate=(1 - 1e-4, 1 - 1e-4),
     )
 
     # quick function for reporting
     def train_callback(i):
         if i % 500 == 0:
-            print(i)
-
-    #         train = utils.accuracy(nn(X_train), y_train)
-    #         test = utils.accuracy(nn(X_test), y_test)
-    #         print(f"train: {train:.4f} test: {test:.4f} iter: {i}")
+            train = utils.accuracy(nn(X_train), y_train)
+            test = utils.accuracy(nn(X_test), y_test)
+            print(f"train: {train:.4f} test: {test:.4f} iter: {i}")
 
     nn.train(
         X_train,

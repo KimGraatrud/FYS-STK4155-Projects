@@ -14,12 +14,15 @@ class FFNN:
         cost_der=costs.mse_der,
         batch_size=None,
         regularization_der=None,
+        descent_method=None,
+        delta=1e-7,
+        decay_rate=None,
     ):
         """
-        cost_der(predict, target)
-        regularization_der(W)
+        descent_method: None, 'rmsprop', or 'adam' (Default None)
+        delta: Small constant for numerical stability (Default 1e-7)
+        decay_rate: Float if using 'rmsprop' or (Float, Float) if using 'adam' (Default None)
         """
-
         self.network_input_size = network_input_size
         self.eta = eta
         self.layer_output_sizes = layer_output_sizes
@@ -29,6 +32,9 @@ class FFNN:
         self.cost_der = cost_der
         self.batch_size = batch_size
         self.regularization_der = regularization_der
+        self.descent_method = descent_method
+        self.delta = delta  # for numerical stability in RMSProp and ADAM
+        self.decay_rate = decay_rate
 
         self.trained = False
 
@@ -59,14 +65,104 @@ class FFNN:
         layer_inputs.append(a)
         return layer_inputs, zs
 
-    def _update_weights(self, layer_grads):
+    def _compute_update(self, layer_grads, acumltr=None, t=0):
+        update = []
+        new_acumltr = []
+        for i, _ in enumerate(self.layers):
+            # Get the gradient by summing over batches
+            dW, db = layer_grads[i]
+            g = (
+                np.sum(dW, axis=2).T / dW.shape[2],
+                np.sum(db, axis=1) / db.shape[1],
+            )
+
+            # Default
+            if self.descent_method is None:
+                update.append(
+                    (
+                        -self.eta * g[0],
+                        -self.eta * g[1],
+                    )
+                )
+
+            # RMSProp
+            elif self.descent_method == "rmsprop":
+                rho = self.decay_rate
+                r = (
+                    (np.zeros_like(g[0]), np.zeros_like(g[1]))
+                    if acumltr is None
+                    else acumltr[i]
+                )
+                r = (
+                    rho * r[0] + (1 - rho) * g[0] ** 2,
+                    rho * r[1] + (1 - rho) * g[1] ** 2,
+                )
+                update.append(
+                    (
+                        -(self.eta / np.sqrt(self.delta + r[0])) * g[0],
+                        -(self.eta / np.sqrt(self.delta + r[1])) * g[1],
+                    )
+                )
+                new_acumltr.append(r)
+
+            # ADAM
+            elif self.descent_method == "adam":
+                rho1, rho2 = self.decay_rate
+
+                # get s, r
+                s = (
+                    (np.zeros_like(g[0]), np.zeros_like(g[1]))
+                    if acumltr is None
+                    else acumltr[i][0]
+                )
+                r = (
+                    (np.zeros_like(g[0]), np.zeros_like(g[1]))
+                    if acumltr is None
+                    else acumltr[i][1]
+                )
+                # set s, r
+                s = (
+                    rho1 * s[0] + (1 - rho1) * g[0],
+                    rho1 * s[1] + (1 - rho1) * g[1],
+                )
+                r = (
+                    rho2 * r[0] + (1 - rho2) * g[0] ** 2,
+                    rho2 * r[1] + (1 - rho2) * g[1] ** 2,
+                )
+                # correct bias
+                s_hat = (
+                    s[0] / (1 - rho1**t),
+                    s[1] / (1 - rho1**t),
+                )
+                r_hat = (
+                    r[0] / (1 - rho2**t),
+                    r[1] / (1 - rho2**t),
+                )
+                # compute update
+                update.append(
+                    (
+                        -self.eta * (s_hat[0] / (np.sqrt(r_hat[0]) + self.delta)),
+                        -self.eta * (s_hat[1] / (np.sqrt(r_hat[1]) + self.delta)),
+                    )
+                )
+                new_acumltr.append((s, r))
+            else:
+                raise ValueError(
+                    f"'{self.descent_method}' is not a regnized descent method"
+                )
+
+        return update, new_acumltr
+
+    def _add_update(self, update):
         """
-        Updates the weights after a backpropagation cycle.
+        Adds update to weights and biases
+
+        update: update with same shape as self.layers
         """
         for i, (W, b) in enumerate(self.layers):
             self.layers[i] = (
-                W - self.eta * np.sum((layer_grads[i][0]), axis=2).T,
-                b - self.eta * np.sum((layer_grads[i][1]), axis=1),
+                W + update[i][0],
+                b + update[i][1],
             )
 
     def _create_layers(self):
@@ -77,7 +173,7 @@ class FFNN:
             W = utils.rng.random(size=(i_size, layer_output_size))
             b = utils.rng.random(size=layer_output_size)
 
-            # Normalize weights so the sums don't explode
+            # Scale initial weights so the feed forward doesn't explode
             W = W / np.sum(W)
             b = b / np.sum(b)
 
@@ -127,11 +223,14 @@ class FFNN:
         """
         Does backpropagation and updates the weights and biases for all layers
         """
+        # Keep track of accumulated grad. and time step for RMSProp and ADAM
+        accumulator = None
+        t = 0
 
-        # Set the train flag, so __call__ doesn't warn.
-        self.trained = True
-
+        # Train
         for i in range(int(n_iter)):
+            t += 1
+
             # Sample the data
             sample = self._sample_indices(inputs)
             inp = inputs[:, sample]
@@ -140,8 +239,11 @@ class FFNN:
             # Backpropagation
             grads = self._Backpropagation(inp, tar)
 
-            # updat weights
-            self._update_weights(grads)
+            # Compute update
+            update, accumulator = self._compute_update(grads, accumulator, t)
+
+            # update weights
+            self._add_update(update)
 
             if callback is not None:
                 callback(i)
@@ -150,11 +252,6 @@ class FFNN:
         """
         Returns the predicted output of a given test input
         """
-        if not self.trained:
-            print(
-                "NN has not been trained yet, please train the network by calling train(train_data, targets)"
-            )
-
         a = test_data
         for (W, b), activation_func in zip(self.layers, self.activation_funcs):
             z = W.T @ a + b[:, None]

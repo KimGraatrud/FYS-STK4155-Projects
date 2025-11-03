@@ -20,5 +20,5 @@ if not os.path.exists(utils.DATA_URL):
     os.mkdir(utils.DATA_URL)
 
 # B.main()
-# F.main()
-weekly.main()
+F.main()
+# weekly.main()
