@@ -9,6 +9,7 @@ from sklearn.metrics import accuracy_score
 FIGURES_URL = "./figures/"
 DATA_URL = "./data/"
 SEED = 5318008
+APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
 
 rng = np.random.default_rng(seed=SEED)
 

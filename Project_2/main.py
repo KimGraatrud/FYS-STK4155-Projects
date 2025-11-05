@@ -3,13 +3,7 @@ import matplotlib.pyplot as plt
 from src import utils
 from parts import B, F, weekly
 
-plt.rcParams.update(
-    {
-        # Figure
-        "figure.dpi": 600,
-        "figure.constrained_layout.use": True,
-    }
-)
+plt.style.use("./style.mplstyle")
 
 # create a home for figures
 if not os.path.exists(utils.FIGURES_URL):
@@ -19,6 +13,7 @@ if not os.path.exists(utils.FIGURES_URL):
 if not os.path.exists(utils.DATA_URL):
     os.mkdir(utils.DATA_URL)
 
-# B.main()
-F.main()
-# weekly.main()
+if __name__ == "__main__":
+    B.main()
+    # F.main()
+    # weekly.main()

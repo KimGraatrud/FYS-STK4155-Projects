@@ -19,7 +19,12 @@ def ReLU_der(x):
     return np.where(x > 0, 1, 0)
 
 
-# def LeakyReLU
+def LeakyReLU(x, alpha=0.05):
+    return np.where(x > 0, x, alpha * x)
+
+
+def LeakyReLU_der(x, alpha=0.05):
+    return np.where(x > 0, 1, alpha)
 
 
 def L1_der(beta, lam=1):
