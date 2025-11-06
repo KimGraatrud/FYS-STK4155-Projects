@@ -33,22 +33,22 @@ def main():
         network_input_size=X_train.shape[0],
         classes=y_train.shape[0],
         layer_output_sizes=[
-            10,
-            # 15,
+            8,
+            # 15
         ],
         activation_funcs=[
             costs.ReLU,
             # costs.ReLU,
         ],
         activation_ders=[
+            # costs.LeakyReLU_der,
             costs.ReLU_der,
-            # costs.ReLU_der,
         ],
-        eta=1e-4,
-        batch_size=20,
+        eta=1e-3,
+        batch_size=32,
         regularization_der=der,
         descent_method="adam",
-        decay_rate=(1 - 1e-4, 1 - 1e-4),
+        decay_rate=(0.9, 0.999),
     )
 
     # quick function for reporting
@@ -61,7 +61,7 @@ def main():
     nn.train(
         X_train,
         y_train,
-        n_iter=5e3,
+        n_iter=3e4,
         callback=train_callback,
     )
 

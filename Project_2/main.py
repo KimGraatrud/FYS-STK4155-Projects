@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 from src import utils
-from parts import B, F, weekly
+from parts import heatmap, overfit, relu_comp, test, batches
 
 plt.style.use("./style.mplstyle")
 
@@ -14,6 +14,15 @@ if not os.path.exists(utils.DATA_URL):
     os.mkdir(utils.DATA_URL)
 
 if __name__ == "__main__":
-    B.main()
+    # print("====== heatmap =======")
+    # heatmap.main()
+    # print("====== overfit =======")
+    # overfit.main()
+    # print("====== relu_comp =======")
+    # relu_comp.main()
+
+    batches.main()
+
+    # test.main()
     # F.main()
     # weekly.main()
