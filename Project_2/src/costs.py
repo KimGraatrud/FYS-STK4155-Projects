@@ -27,6 +27,14 @@ def LeakyReLU_der(x, alpha=0.05):
     return np.where(x > 0, 1, alpha)
 
 
+def one(x):
+    return x
+
+
+def one_der(x):
+    return np.ones_like(x)
+
+
 def L1_der(beta, lam=1):
     return lam * np.sign(beta)
 

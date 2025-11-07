@@ -71,6 +71,23 @@ def load_openml_dataset(dataset="mnist_784"):
     return mnist
 
 
+def prep_classification_data(data):
+    # Extract data (features) and target (labels)
+    X = data["data"]
+    y = data["target"]
+
+    # Split into training and testing
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+    # Format data for our network
+    X_train = X_train.T / 255.0
+    X_test = X_test.T / 255.0
+    y_train = onehot(np.int32(y_train))
+    y_test = onehot(np.int32(y_test))
+
+    return X_train, X_test, y_train, y_test
+
+
 def onehot(y, C=10):
     """
     Sets up the appropriate target matrix for a classification problem

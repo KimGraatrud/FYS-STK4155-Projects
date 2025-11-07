@@ -1,9 +1,9 @@
 import os
 import matplotlib.pyplot as plt
 from src import utils
-from parts import heatmap, overfit, relu_comp, test, batches
+from parts import heatmap, overfit, relu_comp, test, batches, eta, actvns, F
 
-plt.style.use("./style.mplstyle")
+# plt.style.use("./style.mplstyle")
 
 # create a home for figures
 if not os.path.exists(utils.FIGURES_URL):
@@ -20,9 +20,13 @@ if __name__ == "__main__":
     # overfit.main()
     # print("====== relu_comp =======")
     # relu_comp.main()
-
-    batches.main()
-
+    # print("====== batches =======")
+    # batches.main()
+    # print("====== eta =======")
+    # eta.main()
+    # print("===== actvns ======")
+    # actvns.main()
+    
     # test.main()
     # F.main()
     # weekly.main()

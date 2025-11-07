@@ -42,7 +42,7 @@ class FFNN:
 
     def _sample_indices(self, inputs):
         """
-        Returns the indices for a sample of frac% of inputs
+        Returns the indices for a sample of inputs
         """
         high = inputs.shape[1]
         if self.batch_size is None:

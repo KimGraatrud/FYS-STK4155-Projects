@@ -6,13 +6,13 @@ from src.FFNN import FFNN
 
 
 def main():
-    dim = 1
-    N = 10000
+    dim = 2
+    N = 100
     x, y = utils.generate_regression_data(N=N, dim=dim, noise_std=0.05)
 
     # # quick scaling
-    # y -= np.min(y)
-    # y /= np.max(y)
+    y -= np.min(y)
+    y /= np.max(y)
 
     der = None
     # der = lambda X: costs.L1_der(X, lam=1e-5)
@@ -21,41 +21,49 @@ def main():
     nn = FFNN(
         network_input_size=x.shape[0],
         layer_output_sizes=[
-            25,
-            25,
+            # 10,
+            16,
+            16,
+            # 10,
             y.shape[0],
         ],
         activation_funcs=[
-            # costs.sigmoid,
+            # costs.ReLU,
+            costs.LeakyReLU,
+            costs.sigmoid,
+            # costs.ReLU,
             # costs.LeakyReLU,
-            costs.LeakyReLU,
-            costs.LeakyReLU,
-            costs.LeakyReLU,
+            # costs.one,
+            costs.one,
             # costs.ReLU,
         ],
         activation_ders=[
-            # costs.sigmoid_der,
+            costs.LeakyReLU_der,
+            costs.sigmoid_der,
+            # costs.ReLU_der,
+            # costs.ReLU_der,
             # costs.LeakyReLU_der,
-            costs.LeakyReLU_der,
-            costs.LeakyReLU_der,
-            costs.LeakyReLU_der,
+            # costs.one_der,
+            costs.one_der,
             # costs.ReLU_der,
         ],
         cost_fun=costs.mse,
         cost_der=costs.mse_der,
-        eta=0.2,
-        batch_size=15,
+        eta=1e-2,
+        batch_size=64,
         regularization_der=der,
-        # descent_method="adam",
+        descent_method="adam",
+        # decay_rate=0.9,
+        decay_rate=(0.9, 0.999),
     )
 
     # instead of splitting into train & test, right now it's
     # easier to just create new data for testing
-    x_test, y_test = utils.generate_regression_data(N=100, dim=dim, noise_std=0.05)
+    x_test, y_test = utils.generate_regression_data(N=30, dim=dim, noise_std=0.05)
 
     # # quick scaling
-    # y_test -= np.min(y_test)
-    # y_test /= np.max(y_test)
+    y_test -= np.min(y_test)
+    y_test /= np.max(y_test)
 
     def callback(i):
         if i % 1000 == 0:
@@ -65,10 +73,10 @@ def main():
                 f"test {costs.mse(nn(x_test)[0], y_test[0]):.4f}",
             )
 
-    # try:
-    nn.train(x, y, n_iter=1e5, callback=callback)
-    # except KeyboardInterrupt:
-    #     print("\nplotting anyway")
+    try:
+        nn.train(x, y, n_iter=2e5, callback=callback)
+    except KeyboardInterrupt:
+        print("\nplotting anyway")
 
     y_pred = nn(x_test)
 
