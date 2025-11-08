@@ -46,8 +46,8 @@ class ClassifierNN(FFNN):
 
             # regularization
             if self.regularization_der is not None:
-                dW = self.regularization_der(W).T
-                db = self.regularization_der(b)
+                dW = self.regularization_der(W, lam=self.lam).T
+                db = self.regularization_der(b, lam=self.lam)
                 dC_dW = dC_dW + dW[:, :, None]
                 dC_db = dC_db + db[:, None]
 

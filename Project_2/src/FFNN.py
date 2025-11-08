@@ -13,15 +13,17 @@ class FFNN:
         cost_fun=costs.mse,
         cost_der=costs.mse_der,
         batch_size=None,
-        regularization_der=None,
         descent_method=None,
         delta=1e-7,
         decay_rate=None,
+        regularization_der=None,
+        lam=None,
     ):
         """
         descent_method: None, 'rmsprop', or 'adam' (Default None)
         delta: Small constant for numerical stability (Default 1e-7)
         decay_rate: Float if using 'rmsprop' or (Float, Float) if using 'adam' (Default None)
+        lam: Parameter for the regularization_der
         """
         self.network_input_size = network_input_size
         self.eta = eta
@@ -35,8 +37,7 @@ class FFNN:
         self.descent_method = descent_method
         self.delta = delta  # for numerical stability in RMSProp and ADAM
         self.decay_rate = decay_rate
-
-        self.trained = False
+        self.lam = lam
 
         self._create_layers()
 
@@ -210,8 +211,8 @@ class FFNN:
 
             # regularization
             if self.regularization_der is not None:
-                dW = self.regularization_der(W).T
-                db = self.regularization_der(b)
+                dW = self.regularization_der(W, lam=self.lam).T
+                db = self.regularization_der(b, lam=self.lam)
                 dC_dW = dC_dW + dW[:, :, None]
                 dC_db = dC_db + db[:, None]
 
