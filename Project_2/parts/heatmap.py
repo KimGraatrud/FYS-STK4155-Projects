@@ -1,4 +1,5 @@
 import os
+import multiprocessing
 from multiprocessing import Pool
 import numpy as np
 import matplotlib.pyplot as plt
@@ -59,7 +60,7 @@ def main():
     combs = zip(N.ravel(), L.ravel())
 
     # Train networks in parallel
-    with Pool(8) as p:
+    with Pool(multiprocessing.cpu_count()) as p:
         nns = list(p.map(_train, combs))
 
     # make test data

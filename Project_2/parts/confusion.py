@@ -3,7 +3,6 @@ from multiprocessing import Pool
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from src.FFNN import FFNN
 from src.ClassifierNN import ClassifierNN
 from src import utils, costs
 

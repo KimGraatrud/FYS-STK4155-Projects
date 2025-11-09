@@ -1,7 +1,7 @@
 ## Figure
 figure.dpi: 600
 figure.constrained_layout.use: True
-# savefig.format: svg
+savefig.format: svg
 
 ## Plotting
 lines.linewidth: 0.6

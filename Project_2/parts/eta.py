@@ -72,9 +72,7 @@ def main():
     etas = np.logspace(-5, 0, n_etas)
     n_iters = [1e4, 1e2]
 
-    print("multiprocessing.cpu_count()", multiprocessing.cpu_count())
-
-    with Pool(multiprocessing.cpu_count() - 2) as p:
+    with Pool(multiprocessing.cpu_count()) as p:
         oned_scores = []
         twod_scores = []
         mnist_scores = []
