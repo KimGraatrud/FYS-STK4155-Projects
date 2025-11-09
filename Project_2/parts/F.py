@@ -33,19 +33,24 @@ def main():
         network_input_size=X_train.shape[0],
         classes=y_train.shape[0],
         layer_output_sizes=[
-            8,
+            100,
+            # 50,
             # 15
         ],
         activation_funcs=[
-            costs.ReLU,
+            # costs.LeakyReLU,
+            # costs.LeakyReLU,
+            costs.LeakyReLU,
             # costs.ReLU,
         ],
         activation_ders=[
+            costs.LeakyReLU_der,
+            # costs.ReLU_der,
             # costs.LeakyReLU_der,
-            costs.ReLU_der,
+            # costs.LeakyReLU_der,
         ],
         eta=1e-3,
-        batch_size=32,
+        batch_size=16,
         regularization_der=der,
         descent_method="adam",
         decay_rate=(0.9, 0.999),
@@ -61,7 +66,7 @@ def main():
     nn.train(
         X_train,
         y_train,
-        n_iter=3e4,
+        n_iter=1e5,
         callback=train_callback,
     )
 

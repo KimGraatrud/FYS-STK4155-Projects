@@ -10,6 +10,7 @@ from parts import (
     eta,
     actvns,
     regularization,
+    confusion,
     F,
 )
 
@@ -36,8 +37,10 @@ if __name__ == "__main__":
     # eta.main()
     # print("===== actvns ======")
     # actvns.main()
+    # print("===== regularization ======")
+    # regularization.main()
 
-    regularization.main()
     # test.main()
+    confusion.main()
     # F.main()
     # weekly.main()
