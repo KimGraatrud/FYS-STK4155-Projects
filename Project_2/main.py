@@ -11,6 +11,7 @@ from parts import (
     actvns,
     regularization,
     confusion,
+    descent,
     F,
 )
 
@@ -39,8 +40,11 @@ if __name__ == "__main__":
     # actvns.main()
     # print("===== regularization ======")
     # regularization.main()
+    # print("===== confusion ======")
+    # confusion.main()
+    # print("===== descent ======")
+    descent.main()
 
     # test.main()
-    confusion.main()
     # F.main()
     # weekly.main()

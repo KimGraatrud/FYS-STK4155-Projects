@@ -44,6 +44,8 @@ def main():
     for result in results:
         pred, truth = result
 
+        print(f"Accuracy: {utils.accuracy(pred, truth)}")
+
         matrix = np.zeros((10, 10))
 
         for p, t in zip(pred.T, truth.T):
