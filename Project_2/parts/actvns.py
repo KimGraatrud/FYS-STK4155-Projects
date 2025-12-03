@@ -37,6 +37,8 @@ def main():
 
         nn.train(x, y, n_iter=5e4, callback=callback)
 
+        print(f"Final MSE: {costs.mse(nn(x)[0], y[0]):.8f}")
+
         nns.append(nn)
 
     fig = plt.figure(figsize=(utils.APS_COL_W, 1.0 * utils.APS_COL_W))

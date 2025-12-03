@@ -6,27 +6,29 @@ from src.FFNN import FFNN
 
 
 def main():
-    dim = 1
+    dim = 2
     N = 100
     x, y = utils.generate_regression_data(N=N, dim=dim, noise_std=0.05)
 
     # # quick scaling
-    y -= np.min(y)
-    y /= np.max(y)
+    # y -= np.min(y)
+    # y /= np.max(y)
 
     nn = FFNN(
         network_input_size=x.shape[0],
         layer_output_sizes=[
             # 10,
-            50,
-            50,
+            32,
+            # 32,
+            # 50,
             # 10,
             y.shape[0],
         ],
         activation_funcs=[
             # costs.ReLU,
             costs.LeakyReLU,
-            costs.LeakyReLU,
+            # costs.LeakyReLU,
+            # costs.LeakyReLU,
             # costs.sigmoid,
             # costs.ReLU,
             # costs.LeakyReLU,
@@ -39,6 +41,7 @@ def main():
             costs.LeakyReLU_der,
             costs.LeakyReLU_der,
             # costs.LeakyReLU_der,
+            # costs.LeakyReLU_der,
             # costs.sigmoid_der,
             # costs.ReLU_der,
             # costs.ReLU_der,
@@ -49,21 +52,21 @@ def main():
         ],
         cost_fun=costs.mse,
         cost_der=costs.mse_der,
-        eta=5e-2,
-        # batch_size=64,
+        eta=1e-3,
+        batch_size=32,
         descent_method="adam",
-        decay_rate=(0.99, 0.99),
+        decay_rate=(0.9, 0.999),
         # regularization_der=costs.L1_der,
         # lam=1e-10,
     )
 
     # instead of splitting into train & test, right now it's
     # easier to just create new data for testing
-    x_test, y_test = utils.generate_regression_data(N=100, dim=dim, noise_std=0.05)
+    x_test, y_test = utils.generate_regression_data(N=20, dim=dim, noise_std=0.05)
 
     # # quick scaling
-    y_test -= np.min(y_test)
-    y_test /= np.max(y_test)
+    # y_test -= np.min(y_test)
+    # y_test /= np.max(y_test)
 
     def callback(i):
         if i % 1000 == 0:
@@ -74,7 +77,7 @@ def main():
             )
 
     try:
-        nn.train(x, y, n_iter=1e4, callback=callback)
+        nn.train(x, y, n_iter=3e5, callback=callback)
     except KeyboardInterrupt:
         print("\nplotting anyway")
 

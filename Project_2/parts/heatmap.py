@@ -6,19 +6,45 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 from src import utils, costs
 from src.FFNN import FFNN
+from src.ClassifierNN import ClassifierNN
 
-x, y = utils.generate_regression_data(N=10000, dim=1, noise_std=0.05)
-# quick scaling
-offset = np.min(y)
-scale = 1 / np.max(y - offset)
-y = (y - offset) * scale
+
+def _classify(params):
+    (X, y), (nnodes, nlay) = params
+
+    layer_output_sizes = []
+    activation_funcs = []
+    activation_ders = []
+    for _ in range(nlay):
+        layer_output_sizes.append(nnodes)
+        activation_funcs.append(costs.LeakyReLU)
+        activation_ders.append(costs.LeakyReLU_der)
+
+    nn = ClassifierNN(
+        network_input_size=X.shape[0],
+        classes=y.shape[0],
+        layer_output_sizes=layer_output_sizes,
+        activation_funcs=activation_funcs,
+        activation_ders=activation_ders,
+        eta=3e-3,
+        batch_size=16,
+        regularization_der=None,
+        descent_method="adam",
+        decay_rate=(0.9, 0.999),
+    )
+
+    nn.train(X, y, n_iter=2e4)
+
+    print(f"L: {nlay}  N: {nnodes}")
+
+    return nn
 
 
 # This function is broken out so that it
 # may be parallelized
-def _train(param_tuple):
+def _train(params):
 
-    nnodes, nlay = param_tuple
+    (X, y), (nnodes, nlay) = params
 
     layer_output_sizes = np.zeros(nlay + 1) + nnodes
     layer_output_sizes[-1] = y.shape[0]
@@ -30,7 +56,7 @@ def _train(param_tuple):
         activation_ders.append(costs.LeakyReLU_der)
 
     nn = FFNN(
-        network_input_size=x.shape[0],
+        network_input_size=X.shape[0],
         layer_output_sizes=layer_output_sizes,
         activation_funcs=activation_funcs,
         activation_ders=activation_ders,
@@ -38,30 +64,37 @@ def _train(param_tuple):
         cost_der=costs.mse_der,
         eta=0.2,
         # eta=1e-4,
-        batch_size=15,
+        batch_size=16,
         regularization_der=None,
         # descent_method="adam",
-        # decay_rate=(0.99, 0.99),
+        # decay_rate=(0.9, 0.999),
     )
 
-    nn.train(x, y, n_iter=3e5)
+    nn.train(X, y, n_iter=3e5)
 
     print(f"L: {nlay}  N: {nnodes}")
 
     return nn
 
 
-def main():
+def regress_map():
     num_layers = [1, 2, 3]
     num_nodes = [5, 10, 15, 25, 40, 65]
 
-    N, L = np.meshgrid(num_nodes, num_layers)
+    x, y = utils.generate_regression_data(N=10000, dim=1, noise_std=0.05)
+    # quick scaling
+    offset = np.min(y)
+    scale = 1 / np.max(y - offset)
+    y = (y - offset) * scale
 
+    N, L = np.meshgrid(num_nodes, num_layers)
     combs = zip(N.ravel(), L.ravel())
+
+    params = [((x, y), comb) for comb in combs]
 
     # Train networks in parallel
     with Pool(multiprocessing.cpu_count()) as p:
-        nns = list(p.map(_train, combs))
+        nns = list(p.map(_train, params))
 
     # make test data
     x_test, y_test = utils.generate_regression_data(N=100, dim=1, noise_std=0.05)
@@ -99,7 +132,7 @@ def main():
 
     plt.close(fig)
 
-    fig, axs = plt.subplots(nrows=2, figsize=(utils.APS_COL_W, 1.6 * utils.APS_COL_W))
+    fig, axs = plt.subplots(nrows=2, figsize=(utils.APS_COL_W, 1.4 * utils.APS_COL_W))
 
     cmap = plt.colormaps["viridis"]
     cmap.set_bad("grey")
@@ -125,7 +158,6 @@ def main():
 
     axs[0].set_title("Training data")
     axs[1].set_title("Test data")
-    fig.suptitle("NN Performance")
 
     for ax in axs:
         ax.set_xlabel("Number of hidden layers")
@@ -135,5 +167,79 @@ def main():
 
     fig.colorbar(im, label="MSE", location="bottom")
 
-    fig.savefig(os.path.join(utils.FIGURES_URL, "heatmap"))
+    fig.savefig(os.path.join(utils.FIGURES_URL, "heatmap_regress"))
     plt.close(fig)
+
+
+def class_map():
+    num_layers = [1, 2, 3]
+    num_nodes = [5, 10, 15, 25, 40, 65]
+
+    N, L = np.meshgrid(num_nodes, num_layers)
+
+    mnist = utils.load_openml_dataset()
+
+    X, X_test, y, y_test = utils.prep_classification_data(mnist)
+
+    combs = zip(N.ravel(), L.ravel())
+    # print("combs", np.array(list(combs)))
+    params = [((X, y), comb) for comb in combs]
+
+    # Train networks in parallel
+    with Pool(multiprocessing.cpu_count()) as p:
+        nns = list(p.map(_classify, params))
+
+    # Calculate mses
+    train_mses = np.zeros_like(L, dtype=float)
+    test_mses = np.zeros_like(L, dtype=float)
+
+    for j, nlay in enumerate(num_layers):
+        for i, nnodes in enumerate(num_nodes):
+            idx = j * len(num_nodes) + i
+
+            nn = nns[idx]
+            y_pred = nn(X_test)
+
+            test_mses[j][i] = utils.accuracy(y_pred, y_test)
+            train_mses[j][i] = utils.accuracy(nn(X), y)
+
+            print(f"mses[{j}][{i}]", test_mses[j][i])
+
+    fig, axs = plt.subplots(nrows=2, figsize=(utils.APS_COL_W, 1.4 * utils.APS_COL_W))
+
+    cmap = plt.colormaps["plasma"]
+
+    norm = colors.Normalize(
+        vmin=min(np.nanmin(train_mses), np.nanmin(test_mses)),
+        vmax=1.0,
+    )
+
+    axs[0].imshow(
+        train_mses,
+        cmap=cmap,
+        norm=norm,
+    )
+    im = axs[1].imshow(
+        test_mses,
+        cmap=cmap,
+        norm=norm,
+    )
+
+    axs[0].set_title("Training data")
+    axs[1].set_title("Test data")
+
+    for ax in axs:
+        ax.set_ylabel("Number of hidden layers")
+        ax.set_xlabel("Neurons per hidden layer")
+        ax.set_yticks(range(len(num_layers)), labels=num_layers)
+        ax.set_xticks(range(len(num_nodes)), labels=num_nodes)
+
+    fig.colorbar(im, label="Accuracy", location="bottom")
+
+    fig.savefig(os.path.join(utils.FIGURES_URL, "heatmap_class"))
+    plt.close(fig)
+
+
+def main():
+    # regress_map()
+    class_map()

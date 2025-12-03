@@ -9,7 +9,8 @@ from src import utils, costs
 
 def main():
     # Fetch the MNIST dataset
-    mnist = utils.load_openml_dataset()
+    mnist = utils.load_openml_dataset(dataset="fashion-mnist")
+    # mnist = utils.load_openml_dataset()
 
     # Extract data (features) and target (labels)
     X = mnist["data"]
@@ -34,6 +35,8 @@ def main():
         classes=y_train.shape[0],
         layer_output_sizes=[
             100,
+            100,
+            100,
             # 50,
             # 15
         ],
@@ -41,16 +44,20 @@ def main():
             # costs.LeakyReLU,
             # costs.LeakyReLU,
             costs.LeakyReLU,
+            costs.LeakyReLU,
+            costs.LeakyReLU,
             # costs.ReLU,
         ],
         activation_ders=[
+            costs.LeakyReLU_der,
+            costs.LeakyReLU_der,
             costs.LeakyReLU_der,
             # costs.ReLU_der,
             # costs.LeakyReLU_der,
             # costs.LeakyReLU_der,
         ],
         eta=1e-3,
-        batch_size=16,
+        batch_size=32,
         regularization_der=der,
         descent_method="adam",
         decay_rate=(0.9, 0.999),
@@ -63,12 +70,15 @@ def main():
             test = utils.accuracy(nn(X_test), y_test)
             print(f"train: {train:.4f} test: {test:.4f} iter: {i}")
 
-    nn.train(
-        X_train,
-        y_train,
-        n_iter=1e5,
-        callback=train_callback,
-    )
+    try:
+        nn.train(
+            X_train,
+            y_train,
+            n_iter=2e5,
+            callback=train_callback,
+        )
+    except KeyboardInterrupt:
+        print("\nplotting anyway")
 
 
 if __name__ == "__main__":

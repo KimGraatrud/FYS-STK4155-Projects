@@ -16,8 +16,8 @@ def main():
     nn = FFNN(
         network_input_size=x.shape[0],
         layer_output_sizes=[4, y.shape[0]],
-        activation_funcs=[costs.ReLU, costs.ReLU],
-        activation_ders=[costs.ReLU_der, costs.ReLU_der],
+        activation_funcs=[costs.ReLU, costs.one],
+        activation_ders=[costs.ReLU_der, costs.one_der],
         cost_fun=costs.mse,
         cost_der=costs.mse_der,
         eta=10.0,
@@ -26,8 +26,8 @@ def main():
     nn_leaky = FFNN(
         network_input_size=x.shape[0],
         layer_output_sizes=[4, y.shape[0]],
-        activation_funcs=[costs.LeakyReLU, costs.LeakyReLU],
-        activation_ders=[costs.LeakyReLU_der, costs.LeakyReLU_der],
+        activation_funcs=[costs.LeakyReLU, costs.one],
+        activation_ders=[costs.LeakyReLU_der, costs.one_der],
         cost_fun=costs.mse,
         cost_der=costs.mse_der,
         eta=10.0,

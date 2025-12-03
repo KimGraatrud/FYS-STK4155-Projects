@@ -70,7 +70,7 @@ def _classify(params):
 def main():
     n_etas = 100
     etas = np.logspace(-5, 0, n_etas)
-    n_iters = [1e4, 1e2]
+    n_iters = [3e4, 1e2]
 
     with Pool(multiprocessing.cpu_count()) as p:
         oned_scores = []

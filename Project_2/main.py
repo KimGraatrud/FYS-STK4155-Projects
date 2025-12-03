@@ -12,6 +12,8 @@ from parts import (
     regularization,
     confusion,
     descent,
+    test,
+    F,
 )
 
 plt.style.use("./style.mplstyle")
@@ -27,21 +29,24 @@ if not os.path.exists(utils.DATA_URL):
 if __name__ == "__main__":
     print("multiprocessing.cpu_count()", multiprocessing.cpu_count())
 
-    print("====== heatmap =======")
-    heatmap.main()
-    print("====== overfit =======")
-    overfit.main()
-    print("====== relu_comp =======")
-    relu_comp.main()
-    print("====== batches =======")
-    batches.main()
-    print("====== eta =======")
-    eta.main()
-    print("===== actvns ======")
-    actvns.main()
-    print("===== regularization ======")
-    regularization.main()
-    print("===== confusion ======")
-    confusion.main()
-    print("===== descent ======")
-    descent.main()
+    # print("====== heatmap =======")
+    # heatmap.main()
+    # print("====== overfit =======")
+    # overfit.main()
+    # print("====== relu_comp =======")
+    # relu_comp.main()
+    # print("====== batches =======")
+    # batches.main()
+    # print("====== eta =======")
+    # eta.main()
+    # print("===== actvns ======")
+    # actvns.main()
+    # print("===== regularization ======")
+    # regularization.main()
+    # print("===== confusion ======")
+    # confusion.main()
+    # print("===== descent ======")
+    # descent.main()
+
+    F.main()
+    # test.main()
