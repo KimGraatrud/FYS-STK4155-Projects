@@ -1,8 +1,15 @@
+import os
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
 DATA_URL = "./Data/"
+APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
+FIGURES_URL = "./figures/"
+
+# create a home for figures
+if not os.path.exists(FIGURES_URL):
+    os.mkdir(FIGURES_URL)
 
 
 def report_dataset_accuracy(model, dataset):
