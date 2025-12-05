@@ -2,10 +2,13 @@ import os
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from sklearn.metrics import accuracy_score
+
 
 DATA_URL = "./Data/"
 APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
 FIGURES_URL = "./figures/"
+SEED = 2025
 
 # create a home for figures
 if not os.path.exists(FIGURES_URL):
@@ -37,3 +40,11 @@ def dataset_accuracy(model, dataset):
         total += len(labels)
 
     return correct / total
+
+def error_rate(target, pred):
+    return 1 - accuracy_score(target, pred)
+
+def loader_to_numpy(dataloader):
+    """
+    Helper, just returns the numpy arrays of 
+    """
