@@ -12,7 +12,7 @@ if not os.path.exists(FIGURES_URL):
     os.mkdir(FIGURES_URL)
 
 
-def report_dataset_accuracy(model, dataset):
+def dataset_accuracy(model, dataset):
     # First make sure the model is on the cpu
     cpu = torch.device("cpu")
     model.to(cpu)
