@@ -42,7 +42,7 @@ def t_model_search_boost(data, reg_range, depth_range):
 
 def main():
 
-    # Set batchsize, number of images to train on.
+    # Set batchsize, number of images to train on
     batchsz = 256
 
     # Load datasets

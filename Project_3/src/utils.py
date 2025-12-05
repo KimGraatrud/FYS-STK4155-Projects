@@ -43,8 +43,3 @@ def dataset_accuracy(model, dataset):
 
 def error_rate(target, pred):
     return 1 - accuracy_score(target, pred)
-
-def loader_to_numpy(dataloader):
-    """
-    Helper, just returns the numpy arrays of 
-    """
