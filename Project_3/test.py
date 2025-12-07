@@ -9,7 +9,9 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from src import utils
 from src.FacesDataset import FacesDataset
-from parts import tree
+from parts import tree, modelselectCNN
 
 print('Running tree.main()')
 tree.main()
+# tree.cuda_test()
+# modelselectCNN.main()

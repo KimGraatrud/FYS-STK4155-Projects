@@ -3,6 +3,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 import torch
 from joblib import Parallel, delayed
+import matplotlib.pyplot as plt
 
 # Set torch seed to be sure.
 g = torch.Generator()
@@ -39,6 +40,20 @@ def t_model_search_boost(data, reg_range, depth_range):
     print('error rate:',err.flatten()[best_tree])
     i,j = np.unravel_index(best_tree, err.shape)
     print(f'With l2={reg_range[i]}, and depth={depth_range[j]}')
+
+def plot_feature_importances(model, filename):
+    """
+    Plot the feature importance of a trained model.
+
+    To show the reason for the bad preformance.
+    """
+
+    importances = model.feature_importances_.reshape(height, width)
+    plt.imshow(importances, cmap="viridis")
+    plt.colorbar()
+    plt.savefig(filename)
+    plt.show()
+
 
 def main():
 
@@ -84,10 +99,15 @@ def main():
     data = (Xtrain, Xtest, ytrain, ytest)
     t_model_search_boost(data, regs, depths)
 
-
+def cuda_test():
+    import torch
+    print(torch.cuda.is_available())
+    print(torch.cuda.get_device_name(0))
+    print(torch.version.cuda)
 
 if __name__=='__main__':
     main()
+    
 
 
 
