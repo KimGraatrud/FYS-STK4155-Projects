@@ -19,21 +19,16 @@ def dataset_accuracy(model, dataset):
 
     loader = DataLoader(dataset, batch_size=256, shuffle=False)
 
-    correct = 0.0
-    total = 0.0
-
-    # WORKING ON, but leaving out for right now so that
-    # I can make kim a plot
-    # -S
-
-    # by_label_correct = {}
-    # by_label_total = {}
+    correct = np.zeros(5)
+    total = np.zeros_like(correct)
 
     for batch, labels in iter(loader):
         predict = model(batch)
         _, idxs = torch.max(predict, 1)
 
-        correct += np.equal(idxs, labels).sum()
-        total += len(labels)
+        for i, idx in enumerate(idxs):
+            cat = labels[i]
+            correct[cat] += idx == cat
+            total[cat] += 1
 
-    return correct / total
+    return correct, total
