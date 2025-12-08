@@ -63,17 +63,19 @@ class TreeClassifiers:
         return clf.predict(Xpred)
 
     def HistBoost(self, ytrain, Xpred, l2=0.0, learningrate=0.1,
-                    max_leaf=8, max_depth=8, Xoverride=None):
+                    max_leaf=8, max_depth=8, min_samples=20,
+                    Xoverride=None):
 
         # If we wish to change X, for ex. in the case where we have feature selected for it.
         if Xoverride is not None: self._X = Xoverride
 
         clf = HistGradientBoostingClassifier(
-            scoring='log_loss',
+            loss='log_loss',
             learning_rate=learningrate,
             l2_regularization=l2,
             max_leaf_nodes=max_leaf,
-            max_depth=max_depth,
+            min_samples_leaf=min_samples,
+            early_stopping=True, # try and save on some compute 
             random_state=utils.SEED
         )
         clf.fit(self.X, ytrain)
