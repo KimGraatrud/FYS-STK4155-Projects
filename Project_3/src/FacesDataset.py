@@ -7,7 +7,7 @@ from torchvision.io import decode_image
 
 class FacesDataset(Dataset):
     def __init__(self, images_dir, train=True):
-        subdirs = os.listdir(images_dir)
+        subdirs = sorted(os.listdir(images_dir))
 
         image_paths = []
         labels = []
