@@ -26,23 +26,15 @@ class FacesDataset(Dataset):
         self.image_paths = image_paths
         self.labels = labels
 
-    def as_numpy(self, flatten=True):
+    def flat(self):
         """
         Load and return images as a numpy array, and doesnt rely on pytorch's dataloader.
         """
-        images = []
-        for img_path in self.image_paths:
-            img = decode_image(img_path) / 255.0 
-            images.append(img)
-
-        X = np.stack(images)
-
-        if flatten:
-            X = X.reshape(len(X), -1)
-
-        y = np.array(self.labels, dtype=np.int64)
-
-        return X, y
+        all_features = [self[i][0].flatten() for i in range(len(self))]
+        return (
+            np.array(all_features),
+            np.array(self.labels),
+        )
 
     def __len__(self):
         return len(self.image_paths)
