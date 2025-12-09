@@ -9,6 +9,8 @@ DATA_URL = "./Data/"
 APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
 FIGURES_URL = "./figures/"
 SEED = 2025
+rng = np.random.default_rng(seed=SEED)
+
 
 # create a home for figures
 if not os.path.exists(FIGURES_URL):
@@ -60,3 +62,8 @@ def dataset_accuracy_breakdown(model, dataset):
 
 def error_rate(target, pred):
     return 1 - accuracy_score(target, pred)
+
+def shuffle_idx(array):
+    indicies = np.arange(len(array))
+    rng.shuffle(indicies)
+    return indicies

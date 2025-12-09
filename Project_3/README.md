@@ -41,6 +41,7 @@ cd FYS-STK4155-Projects/Project_3/
 Note: Before the code is run, ensure you have a `./Data/` and a `./figures/` directory as that is where the output of `parts/` will be placed. Unfortunatly the data also contains some invalid entries, meaning that the following commands has to be run:
 - `rm ./Data/*/*jpg*`
 - `rm ./Data/*/*[A-z]*.*`
+- `find Data -name '*[[:alpha:]]*.*'`
 
 for a UNIX shell. Find the equivalent for the shell you are using. These commands takes care of the majority, if not all, of the invalid entries.
 
