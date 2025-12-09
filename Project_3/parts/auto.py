@@ -1,8 +1,10 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 import src
 from src import utils
 from src.FacesDataset import FacesDataset
@@ -16,7 +18,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         self.l1 = nn.Linear(48 * 48, 256)
-        self.l2 = nn.Linear(256, 16)
+        self.l2 = nn.Linear(256, 32)
 
     def forward(self, x):
         y = F.relu(self.l1(x))
@@ -28,7 +30,7 @@ class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
 
-        self.l1 = nn.Linear(16, 256)
+        self.l1 = nn.Linear(32, 256)
         self.l2 = nn.Linear(256, 48 * 48)
 
     def forward(self, x):
@@ -90,6 +92,41 @@ def train(model):
                 i = 0
 
         print("epoch", epoch, f"{rolling_loss / i:.4f}")
+
+
+def plot_transition():
+    model = Autoencoder()
+    model.load_state_dict(torch.load("./models/auto.pt", weights_only=True))
+    model.eval()
+
+    dataset = FacesDataset(utils.DATA_URL)
+
+    start, _ = dataset[0]
+    end, _ = dataset[1]
+
+    start_rep = model.encoder(start.flatten(start_dim=1)).detach()
+    end_rep = model.encoder(end.flatten(start_dim=1)).detach()
+
+    diff = end_rep - start_rep
+
+    stages = 5
+
+    fig, axs = plt.subplots(ncols=stages + 2)
+    axs[0].imshow(start[0])
+    axs[-1].imshow(end[0])
+
+    for i in range(stages):
+        rep = start_rep + (diff / stages) * i
+        reprod = model.decoder(rep).detach()
+        reprod = reprod.reshape((1, 48, 48))
+
+        axs[i + 1].imshow(reprod[0])
+
+    for ax in axs:
+        ax.set_axis_off()
+
+    fig.savefig(os.path.join(utils.FIGURES_URL, "auto"))
+    plt.close(fig)
 
 
 def main():
