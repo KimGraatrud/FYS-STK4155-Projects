@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 g = torch.Generator()
 g.manual_seed(utils.SEED)
 
-def t_model_search_boost(data, reg_range, depth_range):
+def t_model_search_boost(data, reg_range, leaf_range, nodes_range):
     """
     Variational model selection approach for gradient boosting,
-    here varying the L2 regularization and tree depth.
+    here varying the L2 regularization, max number of leafs and min number of samples per leaf.
 
     Multithread the search using joblib.
     """
@@ -21,25 +21,26 @@ def t_model_search_boost(data, reg_range, depth_range):
 
     boost = GradBoosting.TreeClassifiers(Xtrain)
 
-    def train_and_eval(reg, d):
-        boostedtest = boost.HistBoost(ytrain, Xtest, l2=reg, max_depth=d)
+    def train_and_eval(reg, lr, nr):
+        boostedtest = boost.HistBoost(ytrain, Xtest, l2=reg, max_leaf=lr, min_samples=nr)
         err = utils.error_rate(ytest, boostedtest)
         return err
 
     results = Parallel(n_jobs=-1)(
-        delayed(train_and_eval)(reg, d)
+        delayed(train_and_eval)(reg, lr, nr)
         for reg in reg_range 
-        for d in depth_range
+        for lr in leaf_range
+        for nr in nodes_range
     )
 
     # Reshape the 1D results array back into the 2D err matrix
-    err = np.array(results).reshape(len(reg_range), len(depth_range))
+    err = np.array(results).reshape(len(reg_range), len(leaf_range), len(nodes_range))
 
     best_tree = np.argmin(err)
     print('idx:',best_tree)
     print('error rate:',err.flatten()[best_tree])
-    i,j = np.unravel_index(best_tree, err.shape)
-    print(f'With l2={reg_range[i]}, and depth={depth_range[j]}')
+    i,j, k = np.unravel_index(best_tree, err.shape)
+    print(f'With l2={reg_range[i]}, number of leafs={leaf_range[j]}, and min samples={nodes_range[k]}')
 
 def plot_feature_importances(model, filename):
     """
@@ -61,23 +62,17 @@ def main():
     batchsz = 256
 
     # Load datasets
+    from torchvision.io import decode_image
     trainset = FacesDataset.FacesDataset(utils.DATA_URL, train=True)
-    # print("trainset", len(trainset))
-    trainloader = DataLoader(trainset, batch_size=batchsz, shuffle=True)
-
     testset = FacesDataset.FacesDataset(utils.DATA_URL, train=False)
-    # print("testset", len(testset))
-    testloader = DataLoader(testset, batch_size=batchsz, shuffle=True)
 
-    # Convert to numpy for scikitlearn
-    imgstrain, labelstrain = next(iter(trainloader))
-    Xtrain = imgstrain.numpy().reshape(imgstrain.shape[0], -1)
-    ytrain = labelstrain.numpy()
-    imgstest, labelstest = next(iter(testloader))
-    Xtest = imgstest.numpy().reshape(imgstest.shape[0], -1)
-    ytest = labelstest.numpy()
 
-    
+    Xtrain, ytrain = trainset.as_numpy(flatten=True)
+    Xtest,  ytest  = testset.as_numpy(flatten=True)
+    raise
+
+
+
     boost = GradBoosting.TreeClassifiers(Xtrain)
 
     # Dummy predicting the training data
@@ -93,11 +88,12 @@ def main():
     print('normal tree error rate',utils.error_rate(ytrain, normalTreetrain))
     print('normal tree error rate',utils.error_rate(ytest, normalTreetest))
 
-    # Boosted tree
-    regs = np.logspace(-4,4, 10)
-    depths = np.arange(3,8+1)
-    data = (Xtrain, Xtest, ytrain, ytest)
-    t_model_search_boost(data, regs, depths)
+    # # Boosted tree
+    # regs = np.logspace(-4,4, 10)
+    # leafs = np.array([15, 31, 63])
+    # sampls = np.array([5, 20])
+    # data = (Xtrain, Xtest, ytrain, ytest)
+    # t_model_search_boost(data, regs, leafs, sampls)
 
 def cuda_test():
     import torch

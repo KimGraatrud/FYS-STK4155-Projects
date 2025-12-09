@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from parts import channels, auto
+from parts import auto
 
 plt.style.use("./style.mplstyle")
 auto.main()

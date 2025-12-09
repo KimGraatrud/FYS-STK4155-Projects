@@ -17,12 +17,17 @@ class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
 
-        self.l1 = nn.Linear(48 * 48, 256)
-        self.l2 = nn.Linear(256, 32)
+        self.l1 = nn.Linear(48 * 48, 512)
+        self.mu = nn.Linear(512, 128)
+        self.sigma = nn.Linear(512, 128)
+        self.N = torch.distributions.Normal(0, 1)
 
     def forward(self, x):
         y = F.relu(self.l1(x))
-        z = F.relu(self.l2(y))
+        mu = self.mu(y)
+        sigma = self.sigma(y)
+
+        z = mu + sigma * self.N.sample(sigma.shape)
         return z
 
 
@@ -30,8 +35,8 @@ class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
 
-        self.l1 = nn.Linear(32, 256)
-        self.l2 = nn.Linear(256, 48 * 48)
+        self.l1 = nn.Linear(128, 512)
+        self.l2 = nn.Linear(512, 48 * 48)
 
     def forward(self, x):
         y = F.relu(self.l1(x))
@@ -63,7 +68,7 @@ def train(model):
     optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8)
     criterion = nn.MSELoss()
 
-    epochs = 100
+    epochs = 40
     i = 0
     rolling_loss = 0
 
@@ -91,7 +96,7 @@ def train(model):
                 rolling_loss = 0.0
                 i = 0
 
-        print("epoch", epoch, f"{rolling_loss / i:.4f}")
+        print("epoch", epoch)
 
 
 def plot_transition():
@@ -99,34 +104,43 @@ def plot_transition():
     model.load_state_dict(torch.load("./models/auto.pt", weights_only=True))
     model.eval()
 
-    dataset = FacesDataset(utils.DATA_URL)
+    for train in [True, False]:
+        dataset = FacesDataset(utils.DATA_URL, train=train)
+        num = 4
+        loader = DataLoader(dataset, batch_size=num, shuffle=True)
+        loader_it = iter(loader)
+        start_batch, _ = next(loader_it)
+        end_batch, _ = next(loader_it)
 
-    start, _ = dataset[0]
-    end, _ = dataset[1]
+        for i in range(num):
+            start = start_batch[i]
+            end = end_batch[i]
 
-    start_rep = model.encoder(start.flatten(start_dim=1)).detach()
-    end_rep = model.encoder(end.flatten(start_dim=1)).detach()
+            start_rep = model.encoder(start.flatten(start_dim=1)).detach()
+            end_rep = model.encoder(end.flatten(start_dim=1)).detach()
 
-    diff = end_rep - start_rep
+            diff = end_rep - start_rep
 
-    stages = 5
+            stages = 4
 
-    fig, axs = plt.subplots(ncols=stages + 2)
-    axs[0].imshow(start[0])
-    axs[-1].imshow(end[0])
+            fig, axs = plt.subplots(ncols=stages + 2)
+            axs[0].imshow(start[0])
+            axs[-1].imshow(end[0])
 
-    for i in range(stages):
-        rep = start_rep + (diff / stages) * i
-        reprod = model.decoder(rep).detach()
-        reprod = reprod.reshape((1, 48, 48))
+            for j in range(stages):
+                rep = start_rep + (diff / stages) * j
+                reprod = model.decoder(rep).detach()
+                reprod = reprod.reshape((1, 48, 48))
 
-        axs[i + 1].imshow(reprod[0])
+                axs[j + 1].imshow(reprod[0])
 
-    for ax in axs:
-        ax.set_axis_off()
+            for ax in axs:
+                ax.set_axis_off()
 
-    fig.savefig(os.path.join(utils.FIGURES_URL, "auto"))
-    plt.close(fig)
+            fig.savefig(
+                os.path.join(utils.FIGURES_URL, f"auto_{['test', 'train'][train]}_{i}")
+            )
+            plt.close(fig)
 
 
 def main():
