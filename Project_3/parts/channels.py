@@ -7,18 +7,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from torchvision.io import decode_image
 import matplotlib.pyplot as plt
 from src import utils
 from src.FacesDataset import FacesDataset
 
 torch.manual_seed(0)
-
-trainset = FacesDataset(utils.DATA_URL, train=True)
-testset = FacesDataset(utils.DATA_URL, train=False)
-print("trainset", len(trainset))
-print("testset", len(testset))
-
-trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
 
 
 class Machine(nn.Module):
@@ -49,97 +43,117 @@ class Machine(nn.Module):
         # return x
 
 
-m = Machine()
+def main():
 
-load = True
-if load:
-    print("Loading model")
-    m.load_state_dict(torch.load("./models/model.pt", weights_only=True))
-    m.eval()
+    trainset = FacesDataset(utils.DATA_URL, train=True)
+    testset = FacesDataset(utils.DATA_URL, train=False)
+    print("trainset", len(trainset))
+    print("testset", len(testset))
 
-else:
-    print("Training model")
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    # device = torch.device("cpu")
-    print("device", device)
+    trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
+    m = Machine()
 
-    m.to(device)
+    # load = False
+    load = True
+    if load:
+        print("Loading model")
+        m.load_state_dict(torch.load("./models/model.pt", weights_only=True))
+        m.eval()
 
-    # report number of params
-    print("Trainable params per layer:")
-    total = 0
-    for p in m.parameters():
-        s = p.size().numel()
-        total += s
-        print(s)
-    print("total:", total)
+    else:
+        print("Training model")
+        device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+        # device = torch.device("cpu")
+        print("device", device)
 
-    optimizer = optim.Adam(m.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8)
-    criterion = nn.CrossEntropyLoss()
+        m.to(device)
 
-    print("\ntraining")
-    # Training loop
-    epochs = 100
-    try:
-        for epoch in range(epochs):
-            rolling_loss = 0
-            i = 0
-            for batch in iter(trainloader):
-                i += 1
-                features, labels = batch
+        # report number of params
+        print("Trainable params per layer:")
+        total = 0
+        for p in m.parameters():
+            s = p.size().numel()
+            total += s
+            print(s)
+        print("total:", total)
 
-                # move tensors to the GPU if using
-                features = features.to(device)
-                labels = labels.to(device)
+        optimizer = optim.Adam(m.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8)
+        criterion = nn.CrossEntropyLoss()
 
-                m.zero_grad()
-                optimizer.zero_grad()
+        print("\ntraining")
+        # Training loop
+        epochs = 100
+        try:
+            for epoch in range(epochs):
+                rolling_loss = 0
+                i = 0
+                for batch in iter(trainloader):
+                    i += 1
+                    features, labels = batch
 
-                result = m(features)
-                loss = criterion(result, labels)
+                    # move tensors to the GPU if using
+                    features = features.to(device)
+                    labels = labels.to(device)
 
-                l = loss.item()
+                    m.zero_grad()
+                    optimizer.zero_grad()
 
-                if l != l:
-                    print("nan encountered!")
-                    break
+                    result = m(features)
+                    loss = criterion(result, labels)
 
-                loss.backward()
-                optimizer.step()
+                    l = loss.item()
 
-                rolling_loss += loss.item()
-                if i % 100 == 99:
-                    print(f"[{epoch}] {rolling_loss / i:.3f}")
-                    rolling_loss = 0.0
-                    i = 0
+                    if l != l:
+                        print("nan encountered!")
+                        break
 
-            print("epoch", epoch, rolling_loss / i)
+                    loss.backward()
+                    optimizer.step()
 
-    except KeyboardInterrupt:
-        pass
+                    rolling_loss += loss.item()
+                    if i % 100 == 99:
+                        print(f"[{epoch}] {rolling_loss / i:.3f}")
+                        rolling_loss = 0.0
+                        i = 0
 
-    save = True
-    if save:
-        print("Saving model")
-        torch.save(m.state_dict(), "./models/model.pt")
+                print("epoch", epoch, rolling_loss / i)
 
+        except KeyboardInterrupt:
+            pass
 
-test_image = 
+        save = False
+        # save = True
+        if save:
+            print("Saving model")
+            torch.save(m.state_dict(), "./models/model.pt")
 
-# fig, ax = plt.subplots()
+    ex_image = torch.unsqueeze(decode_image("./Data/Happy/537.png"), 0) / 255.0
+    # print(ex_image)
 
+    l1 = F.relu(m.c2(F.relu(m.c1(ex_image))))
 
-print("\nCalculating accuracy:")
+    channels = l1.detach()[0]
+    fig, axs = plt.subplots(len(channels))
+    for i, channel in enumerate(channels):
+        axs[i].imshow(channel)
 
-train_correct, train_total = utils.dataset_accuracy(m, trainset)
-test_correct, test_total = utils.dataset_accuracy(m, testset)
+    fig.savefig(os.path.join(utils.FIGURES_URL, "test.png"))
+    plt.close(fig)
 
-print(f"{'':6}{'Train':>10}{'Test':>10}")
-for i in range(5):
-    print(
-        f"{i:6}{train_correct[i] / train_total[i]:10.4f}{test_correct[i] / test_total[i]:10.4f}"
-    )
+    # print("\nCalculating accuracy:")
 
-print(
-    f"{'Total':>6}{np.sum(train_correct) / np.sum(train_total):10.4f}{np.sum(test_correct) / np.sum(test_total):10.4f}"
-)
+    # print("Train", utils.dataset_accuracy(m, trainset))
+    # print("Test", utils.dataset_accuracy(m, testset))
+
+    # train_correct, train_total = utils.dataset_accuracy_breakdown(m, trainset)
+    # test_correct, test_total = utils.dataset_accuracy_breakdown(m, testset)
+
+    # print(f"{'':6}{'Train':>10}{'Test':>10}")
+    # for i in range(5):
+    #     print(
+    #         f"{i:6}{train_correct[i] / train_total[i]:10.4f}{test_correct[i] / test_total[i]:10.4f}"
+    #     )
+
+    # print(
+    #     f"{'Total':>6}{np.sum(train_correct) / np.sum(train_total):10.4f}{np.sum(test_correct) / np.sum(test_total):10.4f}"
+    # )

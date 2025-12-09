@@ -13,7 +13,7 @@ class FacesDataset(Dataset):
         labels = []
 
         for i, label in enumerate(subdirs):
-            filenames = os.listdir(path.join(images_dir, label))
+            filenames = sorted(os.listdir(path.join(images_dir, label)))
             for j, filename in enumerate(filenames):
                 is_training_image = not (j % 10 == 9)
                 if is_training_image == train:
