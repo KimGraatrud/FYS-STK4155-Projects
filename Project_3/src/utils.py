@@ -8,13 +8,19 @@ from sklearn.metrics import accuracy_score
 DATA_URL = "./Data/"
 APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
 FIGURES_URL = "./figures/"
+MODELS_URL = "./models/"
 SEED = 2025
 rng = np.random.default_rng(seed=SEED)
 
 
-# create a home for figures
-if not os.path.exists(FIGURES_URL):
-    os.mkdir(FIGURES_URL)
+
+# create a home for figures, models, etc.
+def create_directories():
+    if not os.path.exists(FIGURES_URL):
+        os.mkdir(FIGURES_URL)
+
+    if not os.path.exists(MODELS_URL):
+        os.mkdir(MODELS_URL)
 
 
 def dataset_accuracy(model, dataset):

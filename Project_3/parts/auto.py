@@ -10,9 +10,6 @@ from src import utils
 from src.FacesDataset import FacesDataset
 
 
-torch.manual_seed(0)
-
-
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
@@ -25,7 +22,7 @@ class Encoder(nn.Module):
     def forward(self, x):
         y = F.relu(self.l1(x))
         mu = self.mu(y)
-        sigma = self.sigma(y)
+        sigma = F.sigmoid(self.sigma(y))
 
         z = mu + sigma * self.N.sample(sigma.shape)
         return z
@@ -68,7 +65,7 @@ def train(model):
     optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8)
     criterion = nn.MSELoss()
 
-    epochs = 40
+    epochs = 10
     i = 0
     rolling_loss = 0
 
