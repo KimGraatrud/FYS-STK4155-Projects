@@ -9,9 +9,9 @@ utils.create_directories()
 
 plt.style.use("./style.mplstyle")
 
-cnn.train_models()
-cnn.small_demo()
+# cnn.train_models()
+# cnn.small_demo()
+# cnn.evaluate_models()
 # autotree.main()
-# auto.main()
+auto.main()
 # auto.plot_transition()
-# channels.main()

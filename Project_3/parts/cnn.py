@@ -61,13 +61,14 @@ class Large(nn.Module):
     def __init__(self):
         super(Large, self).__init__()
 
-        self.c1 = nn.Conv2d(1, 16, 3)
-        self.c2 = nn.Conv2d(16, 32, 3)
+        self.c1 = nn.Conv2d(1, 8, 3)
+        self.c2 = nn.Conv2d(8, 16, 3)
         self.pool1 = nn.AvgPool2d(2, 2)
-        self.c3 = nn.Conv2d(32, 64, 3)
-        self.pool2 = nn.AvgPool2d(4, 4)
+        self.c3 = nn.Conv2d(16, 32, 3)
+        self.c4 = nn.Conv2d(32, 64, 5)
+        self.pool2 = nn.AvgPool2d(3, 2)
 
-        self.l1 = nn.Linear(64 * 5 * 5, 32)
+        self.l1 = nn.Linear(64 * 7 * 7, 32)
         self.l2 = nn.Linear(32, 5)
 
     def forward(self, x):
@@ -75,6 +76,7 @@ class Large(nn.Module):
         x = F.leaky_relu(self.c2(x))
         x = self.pool1(x)
         x = F.leaky_relu(self.c3(x))
+        x = F.leaky_relu(self.c4(x))
         x = self.pool2(x)
 
         x = torch.flatten(x, start_dim=1)
@@ -96,7 +98,7 @@ def _train(model):
     optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8)
     criterion = nn.CrossEntropyLoss()
 
-    epochs = 10
+    epochs = 30
     i = 0
     rolling_loss = 0
 
@@ -214,3 +216,22 @@ def small_demo():
     fig.savefig(os.path.join(utils.FIGURES_URL, "small_demo"))
 
     plt.close(fig)
+
+
+def evaluate_models():
+    models = [Small(), Medium(), Large()]
+    names = ["small", "medium", "large"]
+    testset = FacesDataset(utils.DATA_URL, train=False)
+
+    for model, name in zip(models, names):
+        model.load_state_dict(
+            torch.load(os.path.join(utils.MODELS_URL, f"{name}.pt"), weights_only=True)
+        )
+
+        model.eval()
+
+        print(name)
+        correct, total = utils.dataset_accuracy_breakdown(model, testset)
+        for i in range(5):
+            print(f"{i:6}{correct[i] / total[i]:10.4f}")
+        print(f"{'Total':>6}{np.sum(correct) / np.sum(total):10.4f}")
