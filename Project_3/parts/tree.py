@@ -4,6 +4,11 @@ from torch.utils.data import DataLoader
 import torch
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
+from sklearn.ensemble import AdaBoostClassifier, HistGradientBoostingClassifier
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.dummy import DummyClassifier
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
 
 # Set torch seed to be sure.
 g = torch.Generator()
@@ -87,39 +92,69 @@ def main():
     Xtrain, ytrain = FacesDataset.FacesDataset(utils.DATA_URL, train=True).flat()
     Xtest, ytest = FacesDataset.FacesDataset(utils.DATA_URL, train=False).flat()
 
+    print(ytrain.shape)
+    print(ytest.shape)
+
     tr_idx = utils.shuffle_idx(ytrain)
     te_idx = utils.shuffle_idx(ytest)
     Xtrain, ytrain = Xtrain[tr_idx], ytrain[tr_idx]
     Xtest, ytest = Xtest[te_idx], ytest[te_idx]
 
-    print('train', np.unique(ytrain))
-    print('test', np.unique(ytest))
-
-    # Set batchsize, number of images to train on
+    # Set number of images to train on
     batchsz = len(ytrain)
     Xtrain, ytrain = Xtrain[:batchsz], ytrain[:batchsz]
     Xtest, ytest = Xtest[:batchsz], ytest[:batchsz]
-    
 
-    boost = GradBoosting.TreeClassifiers(Xtrain)
 
     # Dummy predicting the training data
-    dummytrain = boost.dummyTree(ytrain, Xtrain)
-    dummytest = boost.dummyTree(ytrain, Xtest)
+    model = DummyClassifier(random_state=utils.SEED).fit(Xtrain, ytrain)
+    dummytrain = model.predict(Xtrain)
+    dummytest = model.predict(Xtest)
 
     print('dummy error rate train',utils.error_rate(ytrain, dummytrain))
     print('dummy error rate test',utils.error_rate(ytest, dummytest))
     
     # Non-bounded tree predicting training data
-    normalTreetrain = boost.classifierTree(ytrain, Xtrain)
-    normalTreetest = boost.classifierTree(ytrain, Xtest)
+    model = DecisionTreeClassifier().fit(Xtrain, ytrain)
+    normalTreetrain = model.predict(Xtrain)
+    normalTreetest = model.predict(Xtest)
+
     print('normal tree error rate',utils.error_rate(ytrain, normalTreetrain))
     print('normal tree error rate',utils.error_rate(ytest, normalTreetest))
 
-    trboosted = boost.HistBoost(ytrain, Xtrain)
-    teboosted = boost.HistBoost(ytrain, Xtest)
-    print('grad boost train error rate',utils.error_rate(ytrain, trboosted))
-    print('grad boost test error rate',utils.error_rate(ytest, teboosted))
+    utils.print_tree_data(model)
+
+    confusion = confusion_matrix(ytest, normalTreetest, )
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=confusion,
+        display_labels=FacesDataset.LABELS
+    ).plot(cmap='viridis')
+    plt.savefig('figures/deep-tree-CM.pdf')
+
+
+    # Dont actually plot this
+    # plt.figure(figsize=(18, 10))
+    # plot_tree(
+    #     model,
+    #     filled=True,
+    # )
+    # plt.savefig('figures/bigtree.pdf')
+    # plt.show()
+
+    # # Gradient boost
+    # model = HistGradientBoostingClassifier(
+    #         loss='log_loss',
+    #         # learning_rate=learningrate,
+    #         # l2_regularization=l2,
+    #         # max_leaf_nodes=max_leaf,
+    #         # min_samples_leaf=min_samples,
+    #         # early_stopping=False, # try and save on some compute 
+    #         random_state=utils.SEED
+    # ).fit(Xtrain, ytrain)
+    # trboosted = model.predict(Xtrain)
+    # teboosted = model.predict(Xtest)
+    # print('grad boost train error rate',utils.error_rate(ytrain, trboosted))
+    # print('grad boost test error rate',utils.error_rate(ytest, teboosted))
 
     # # Boosted tree
     # regs = np.logspace(-4,4, 10)
@@ -127,12 +162,6 @@ def main():
     # sampls = np.array([5, 20])
     # data = (Xtrain, Xtest, ytrain, ytest)
     # t_model_search_boost(data, regs, leafs, sampls)
-
-def cuda_test():
-    import torch
-    print(torch.cuda.is_available())
-    print(torch.cuda.get_device_name(0))
-    print(torch.version.cuda)
 
 if __name__=='__main__':
     main()
