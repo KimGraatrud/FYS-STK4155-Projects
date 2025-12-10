@@ -10,52 +10,42 @@ from src import utils
 from src.FacesDataset import FacesDataset
 
 
-class Encoder(nn.Module):
-    def __init__(self):
-        super(Encoder, self).__init__()
-
-        self.l1 = nn.Linear(48 * 48, 512)
-        self.mu = nn.Linear(512, 128)
-        self.sigma = nn.Linear(512, 128)
-        self.N = torch.distributions.Normal(0, 1)
-
-    def forward(self, x):
-        y = F.relu(self.l1(x))
-        mu = self.mu(y)
-        sigma = F.sigmoid(self.sigma(y))
-
-        z = mu + sigma * self.N.sample(sigma.shape)
-        return z
-
-
-class Decoder(nn.Module):
-    def __init__(self):
-        super(Decoder, self).__init__()
-
-        self.l1 = nn.Linear(128, 512)
-        self.l2 = nn.Linear(512, 48 * 48)
-
-    def forward(self, x):
-        y = F.relu(self.l1(x))
-        z = torch.sigmoid(self.l2(y))
-        return z
-
-
 class Autoencoder(nn.Module):
     def __init__(self):
         super(Autoencoder, self).__init__()
-        self.encoder = Encoder()
-        self.decoder = Decoder()
+        self.encoder = nn.Sequential(
+            nn.Conv2d(1, 16, 3, padding=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(16, 16, 3, padding=1, stride=2),
+            nn.LeakyReLU(),
+            nn.Conv2d(16, 32, 3, padding=1),
+            nn.LeakyReLU(),
+            nn.Conv2d(32, 32, 3, padding=1, stride=2),
+            nn.LeakyReLU(),
+            nn.Flatten(),
+            nn.Linear(32 * 12 * 12, 128),
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(128, 32 * 12 * 12),
+            nn.Unflatten(1, (32, 12, 12)),
+            nn.ConvTranspose2d(32, 32, 3, padding=1, stride=2, output_padding=1),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(32, 16, 3, padding=1),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(16, 16, 3, padding=1, stride=2, output_padding=1),
+            nn.LeakyReLU(),
+            nn.ConvTranspose2d(16, 1, 3, padding=1),
+            nn.LeakyReLU(),
+        )
 
     def forward(self, x):
-        y = self.encoder(x)
-        z = self.decoder(y)
-        return z
+        z = self.encoder(x)
+        return self.decoder(z)
 
 
 def train(model):
-    # device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    device = torch.device("cpu")
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    # device = torch.device("cpu")
     print("device", device)
     model.to(device)
 
@@ -73,7 +63,6 @@ def train(model):
         for batch in iter(dataloader):
             i += 1
             features, _ = batch
-            features = features.flatten(start_dim=1)
             features = features.to(device)
 
             optimizer.zero_grad()
@@ -113,8 +102,8 @@ def plot_transition():
             start = start_batch[i]
             end = end_batch[i]
 
-            start_rep = model.encoder(start.flatten(start_dim=1)).detach()
-            end_rep = model.encoder(end.flatten(start_dim=1)).detach()
+            start_rep = model.encoder(start.unsqueeze(0)).detach()
+            end_rep = model.encoder(end.unsqueeze(0)).detach()
 
             diff = end_rep - start_rep
 
