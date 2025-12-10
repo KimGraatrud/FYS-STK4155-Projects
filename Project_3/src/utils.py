@@ -73,3 +73,10 @@ def shuffle_idx(array):
     indicies = np.arange(len(array))
     rng.shuffle(indicies)
     return indicies
+
+def print_tree_data(treeModel):
+
+    print(f'{treeModel}\'s stats:')
+    print(f'    - Depth: {treeModel.get_n_leaves()}')
+    print(f'    - Number of leaves: {treeModel.get_n_leaves()}')
+    print(f'    - Parameters: {treeModel.get_params()}')

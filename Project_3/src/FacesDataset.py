@@ -5,8 +5,7 @@ from torch.utils.data import Dataset
 from torchvision.io import decode_image
 import numpy as np
 
-TARGET_SIZE = (1, 48, 48)
-
+LABELS = ['Angry', 'Fear', 'Happy', 'Sad', 'Surprise']
 
 class FacesDataset(Dataset):
     def __init__(self, images_dir, train=True):

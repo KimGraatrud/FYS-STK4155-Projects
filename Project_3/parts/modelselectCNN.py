@@ -12,6 +12,8 @@ from joblib import Parallel, delayed
 import itertools
 import time
 
+device = torch.device("npu" if torch.backends.mps.is_available() else "cpu")
+
 # Temporary class placement
 class Machine(nn.Module):
     def __init__(self):
