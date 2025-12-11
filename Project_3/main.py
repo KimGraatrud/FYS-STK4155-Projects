@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-from parts import auto, autotree, cnn
+from parts import cnn, galaxies
+
 from src import utils
 import torch
 
@@ -9,9 +10,10 @@ utils.create_directories()
 
 plt.style.use("./style.mplstyle")
 
-# cnn.train_models()
+galaxies.main()
+cnn.train_models()
 # cnn.small_demo()
 # cnn.evaluate_models()
 # autotree.main()
-auto.main()
-auto.plot_transition()
+# auto.main()
+# auto.plot_transition()

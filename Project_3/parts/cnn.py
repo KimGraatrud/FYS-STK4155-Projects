@@ -11,18 +11,18 @@ from torchvision.io import decode_image
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from src import utils
-from src.FacesDataset import FacesDataset
+from src.Dataset import GalaxyDataset
 
 
 class Small(nn.Module):
     def __init__(self):
         super(Small, self).__init__()
 
-        self.c1 = nn.Conv2d(1, 4, 3)
+        self.c1 = nn.Conv2d(5, 8, 3)
         self.pool1 = nn.AvgPool2d(2, 2)
-        self.c2 = nn.Conv2d(4, 8, 3)
+        self.c2 = nn.Conv2d(8, 8, 3)
         self.pool2 = nn.AvgPool2d(3, 3)
-        self.l1 = nn.Linear(8 * 7 * 7, 5)
+        self.l1 = nn.Linear(8 * 9 * 9, 1)
 
     def forward(self, x):
         x = F.leaky_relu(self.c1(x))
@@ -38,13 +38,13 @@ class Medium(nn.Module):
     def __init__(self):
         super(Medium, self).__init__()
 
-        self.c1 = nn.Conv2d(1, 8, 3)
+        self.c1 = nn.Conv2d(5, 8, 3)
         self.c2 = nn.Conv2d(8, 16, 3)
         self.pool1 = nn.AvgPool2d(2, 2)
         self.c3 = nn.Conv2d(16, 32, 4)
         self.pool2 = nn.AvgPool2d(3, 3)
 
-        self.l1 = nn.Linear(32 * 6 * 6, 5)
+        self.l1 = nn.Linear(32 * 9 * 9, 1)
 
     def forward(self, x):
         x = F.leaky_relu(self.c1(x))
@@ -52,6 +52,7 @@ class Medium(nn.Module):
         x = self.pool1(x)
         x = F.leaky_relu(self.c3(x))
         x = self.pool2(x)
+
         x = torch.flatten(x, start_dim=1)
 
         return self.l1(x)
@@ -61,15 +62,15 @@ class Large(nn.Module):
     def __init__(self):
         super(Large, self).__init__()
 
-        self.c1 = nn.Conv2d(1, 8, 3)
+        self.c1 = nn.Conv2d(5, 8, 3)
         self.c2 = nn.Conv2d(8, 16, 3)
         self.pool1 = nn.AvgPool2d(2, 2)
         self.c3 = nn.Conv2d(16, 32, 3)
         self.c4 = nn.Conv2d(32, 64, 5)
         self.pool2 = nn.AvgPool2d(3, 2)
 
-        self.l1 = nn.Linear(64 * 7 * 7, 32)
-        self.l2 = nn.Linear(32, 5)
+        self.l1 = nn.Linear(64 * 11 * 11, 32)
+        self.l2 = nn.Linear(32, 1)
 
     def forward(self, x):
         x = F.leaky_relu(self.c1(x))
@@ -92,13 +93,13 @@ def _train(model):
     print("device", device)
     model.to(device)
 
-    dataset = FacesDataset(utils.DATA_URL)
+    dataset = GalaxyDataset(mode="validate")
     dataloader = DataLoader(dataset, batch_size=256, shuffle=True)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
 
-    epochs = 30
+    epochs = 5
     i = 0
     rolling_loss = 0
 
@@ -107,12 +108,12 @@ def _train(model):
             i += 1
             features, labels = batch
             features = features.to(device)
-            labels = labels.to(device)
+            labels = labels.float().to(device)
 
             optimizer.zero_grad()
 
             # forward
-            pred = model(features)
+            pred = model(features).squeeze()
             loss = criterion(pred, labels)
 
             # train
@@ -145,6 +146,8 @@ def train_models():
 
 
 def small_demo():
+    # NOT FIXED YET
+    raise
     small = Small()
     path = os.path.join(utils.MODELS_URL, "small.pt")
     small.load_state_dict(torch.load(path, weights_only=True))
@@ -219,6 +222,8 @@ def small_demo():
 
 
 def evaluate_models():
+    # NOT FIXED YET
+    raise
     models = [Small(), Medium(), Large()]
     names = ["small", "medium", "large"]
     testset = FacesDataset(utils.DATA_URL, train=False)

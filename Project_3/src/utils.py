@@ -4,14 +4,16 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
-
-DATA_URL = "./Data/"
+DATA_PATHS = {
+    "train": "",
+    "validate": "/Users/simon/projects/school/uio/ml/FYS-STK4155-Projects/Project_3/data/5x64x64_validation_with_morphology.hdf5",
+    "test": "/Users/simon/projects/school/uio/ml/FYS-STK4155-Projects/Project_3/data/5x64x64_testing_with_morphology.hdf5",
+}
 APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
 FIGURES_URL = "./figures/"
 MODELS_URL = "./models/"
 SEED = 2025
 rng = np.random.default_rng(seed=SEED)
-
 
 
 # create a home for figures, models, etc.
@@ -69,14 +71,16 @@ def dataset_accuracy_breakdown(model, dataset):
 def error_rate(target, pred):
     return 1 - accuracy_score(target, pred)
 
+
 def shuffle_idx(array):
     indicies = np.arange(len(array))
     rng.shuffle(indicies)
     return indicies
 
+
 def print_tree_data(treeModel):
 
-    print(f'{treeModel}\'s stats:')
-    print(f'    - Depth: {treeModel.get_n_leaves()}')
-    print(f'    - Number of leaves: {treeModel.get_n_leaves()}')
-    print(f'    - Parameters: {treeModel.get_params()}')
+    print(f"{treeModel}'s stats:")
+    print(f"    - Depth: {treeModel.get_n_leaves()}")
+    print(f"    - Number of leaves: {treeModel.get_n_leaves()}")
+    print(f"    - Parameters: {treeModel.get_params()}")
