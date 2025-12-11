@@ -92,10 +92,13 @@ def _train(model):
     print("device", device)
     model.to(device)
 
-    dataset = GalaxyDataset(mode="validate")
-    dataloader = DataLoader(dataset, batch_size=256, shuffle=True)
+    dataset = GalaxyDataset(mode="train")
+    dataloader = DataLoader(dataset, batch_size=512, shuffle=True)
 
     optimizer = optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.1, patience=5, verbose=True
+    )
     criterion = nn.MSELoss()
 
     epochs = 100
@@ -118,6 +121,9 @@ def _train(model):
             # train
             loss.backward()
             optimizer.step()
+
+            # after computing val_loss
+            scheduler.step(val_loss)
 
             # reporting
             rolling_loss += loss.item()
