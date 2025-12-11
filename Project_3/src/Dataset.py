@@ -3,6 +3,7 @@ import h5py as h5
 from src import utils
 import numpy as np
 
+
 class GalaxyDataset(Dataset):
     def __init__(self, mode="train"):
         """
@@ -27,8 +28,11 @@ class GalaxyDataset(Dataset):
         where p = 5*64*64.
         """
         # Limit to number of images loaded, if needed.
-        num_imgs = min(num_imgs, len(self.images)) if num_imgs is not None else len(self.images)
-
+        num_imgs = (
+            min(num_imgs, len(self.images))
+            if num_imgs is not None
+            else len(self.images)
+        )
 
         # Load slice from the HDF5 dataset
         data = self.images[:num_imgs]

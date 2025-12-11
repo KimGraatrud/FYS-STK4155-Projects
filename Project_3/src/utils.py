@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
 DATA_PATHS = {
-    "train": "",
+    "train": "/Users/simon/projects/school/uio/ml/FYS-STK4155-Projects/Project_3/data/5x64x64_training_with_morphology.hdf5",
     "validate": "/home/stevensj/Coding/uio/masters/fys-stk4155/FYS-STK4155-Projects/Project_3/data/5x64x64_validation_with_morphology.hdf5",
     "test": "/home/stevensj/Coding/uio/masters/fys-stk4155/FYS-STK4155-Projects/Project_3/data/5x64x64_testing_with_morphology.hdf5",
 }
@@ -66,6 +66,11 @@ def dataset_accuracy_breakdown(model, dataset):
             total[cat] += 1
 
     return correct, total
+
+
+def trainable_params(model):
+    ps = filter(lambda p: p.requires_grad, model.parameters())
+    return np.sum([np.prod(p.size()) for p in ps])
 
 
 def error_rate(target, pred):
