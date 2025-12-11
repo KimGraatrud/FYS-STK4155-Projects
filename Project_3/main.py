@@ -7,11 +7,11 @@ torch.manual_seed(0)
 
 utils.create_directories()
 
-plt.style.use("./style.mplstyle")
+# plt.style.use("./style.mplstyle")
 
 # cnn.train_models()
 # cnn.small_demo()
 # cnn.evaluate_models()
 # autotree.main()
-auto.main()
+# auto.main()
 # auto.plot_transition()

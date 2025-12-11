@@ -7,6 +7,23 @@ import numpy as np
 
 LABELS = ['Angry', 'Fear', 'Happy', 'Sad', 'Surprise']
 
+def loadall(images_dir):
+    all_files = []
+    for i, label in enumerate(sorted(os.listdir(images_dir))):
+        for filename in sorted(os.listdir(path.join(images_dir, label))):
+            all_files.append((path.join(images_dir, label, filename), i))
+
+    images = []
+    labels = []
+
+    for filepath, label in all_files:
+        img = decode_image(filepath) / 255.0   # use your existing decoder
+        images.append(img.flatten())
+        labels.append(label)
+    
+    return np.array(images), np.array(labels)
+
+
 class FacesDataset(Dataset):
     def __init__(self, images_dir, train=True):
         subdirs = sorted(os.listdir(images_dir))
@@ -24,6 +41,7 @@ class FacesDataset(Dataset):
 
         self.image_paths = image_paths
         self.labels = labels
+
 
     def flat(self):
         """

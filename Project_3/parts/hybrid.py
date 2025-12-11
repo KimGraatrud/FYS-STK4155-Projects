@@ -1,4 +1,4 @@
-from src import utils, FacesDataset, CNN 
+from src import utils, FacesDataset
 import numpy as np
 from torch.utils.data import DataLoader
 import torch
@@ -12,6 +12,7 @@ from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
 from sklearn.preprocessing import StandardScaler # Feature scaling after 
+from sklearn.model_selection import train_test_split
 
 # set torch seed 
 torch.manual_seed(utils.SEED)  
@@ -69,7 +70,7 @@ def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
     trainloader = DataLoader(trainset, batch_size=batchsize, shuffle=True)
     m = Machine()
 
-    optimizer = optim.Adam(m.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8)
+    optimizer = optim.Adam(m.parameters(), lr=0.05, betas=(0.9, 0.999), eps=1e-8)
     criterion = nn.CrossEntropyLoss()
 
     print("\ntraining")
@@ -103,7 +104,7 @@ def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
                 rolling_loss += loss.item()
                 if verbose:
                     if i % 100 == 99:
-                        print(f"[{epoch}] {rolling_loss / i:.3f}")
+                        print(f"[{epoch}], Loss: {rolling_loss / i:.3f}")
                         rolling_loss = 0.0
                         i = 0
 
@@ -148,14 +149,9 @@ def main():
     print("trainset", len(trainset))
     print("testset", len(testset))
 
-    model = trainmodel(trainset, device=device, verbose=True, max_epocs=1)
+    model = trainmodel(trainset, device=device, verbose=True, max_epocs=10)
     tr_features, tr_labels = extract_conv_features(trainset, model, device=device)
     te_features, te_labels = extract_conv_features(testset, model, device=device)
-
-    # Scale features
-    scaler = StandardScaler().fit(tr_features)
-    tr_features = scaler.transform(tr_features)
-    te_features = scaler.transform(te_features)
 
     model = DecisionTreeClassifier().fit(tr_features, tr_labels)
     normalTreetrain = model.predict(tr_features)
@@ -164,33 +160,5 @@ def main():
     print('normal tree error rate', accuracy_score(tr_labels, normalTreetrain))
     print('normal tree error rate', accuracy_score(te_labels, normalTreetest))
 
-    # Gradient boost
-    # model = HistGradientBoostingClassifier(
-    #         loss='log_loss',
-    #         # learning_rate=learningrate,
-    #         # l2_regularization=l2,
-    #         # max_leaf_nodes=max_leaf,
-    #         # min_samples_leaf=min_samples,
-    #         # early_stopping=False, # try and save on some compute 
-    #         random_state=utils.SEED
-    # ).fit(tr_features, tr_labels)
-
-
-    # trboosted = model.predict(tr_features)
-    # teboosted = model.predict(te_features)
-    # print('grad boost train error rate',utils.error_rate(tr_labels, trboosted))
-    # print('grad boost test error rate',utils.error_rate(te_labels, teboosted))
-
     utils.print_tree_data(model)
-
-
-
-    # print(tr_features.shape)
-    # print(te_features.shape)
-    # print(type(tr_features))
-    # print(type(te_features))
-
-    # calc_acc((trainset,testset), model=model)
-
-
 

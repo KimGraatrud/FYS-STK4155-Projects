@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import AdaBoostClassifier, HistGradientBoostingClassifier
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.dummy import DummyClassifier
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
+from sklearn.model_selection import train_test_split
 
 
 # Set torch seed to be sure.
-g = torch.Generator()
-g.manual_seed(utils.SEED)
+torch.manual_seed(utils.SEED)
 
 def t_model_search_boost(data, reg_range, leaf_range, nodes_range):
     """
@@ -47,7 +47,7 @@ def t_model_search_boost(data, reg_range, leaf_range, nodes_range):
     i,j, k = np.unravel_index(best_tree, err.shape)
     print(f'With l2={reg_range[i]}, number of leafs={leaf_range[j]}, and min samples={nodes_range[k]}')
 
-def plot_feature_importances(model, filename, imgsize):
+def plot_feature_importances(model, filename, L, H):
     """
     Plot the feature importance of a trained model.
 
@@ -55,36 +55,11 @@ def plot_feature_importances(model, filename, imgsize):
     """
 
 
-    importances = model.feature_importances_.reshape(imgsize, imgsize)
+    importances = model.feature_importances_.reshape(L, H)
     plt.imshow(importances, cmap="viridis")
     plt.colorbar()
     plt.savefig(filename)
     plt.show()
-
-def dummy_train_fit(data):
-    Xtrain, ytrain, Xtest, ytest = data
-    clf = DummyClassifier(random_state=utils.SEED)
-    clf.fit(Xtrain, ytrain)
-    return clf.predict(Xtest)
-
-def classifiertree_train_fit(data, Xpred, max_depth=None):
-    Xtrain, ytrain, Xtest, ytest = data
-    clf = DecisionTreeClassifier(max_depth=maxDepth, random_state=utils.SEED)
-    clf.fit(Xtrain, ytrain)
-    return clf.predict(Xpred)
-
-def histboost_train_fit(data, Xpred, l2=0.0, learningrate=0.1,
-                    max_leaf=8, max_depth=8, min_samples=20):
-    Xtrain, ytrain, Xtest, ytest = data
-    clf = AdaBoostClassifier(
-        estimator=DecisionTreeClassifier(max_leaf_nodes=max_leaf),
-        n_estimators=n_weak_learners,
-        random_state=utils.SEED
-    )
-    clf.fit(Xtrain, ytrain)
-    return clf.predict(Xpred)
-
-
 
 def main():
 
@@ -92,44 +67,49 @@ def main():
     Xtrain, ytrain = FacesDataset.FacesDataset(utils.DATA_URL, train=True).flat()
     Xtest, ytest = FacesDataset.FacesDataset(utils.DATA_URL, train=False).flat()
 
+    print(Xtrain.shape)
+    print(Xtest.shape)
     print(ytrain.shape)
     print(ytest.shape)
+
+    ytrain_shuffled = ytrain.copy()
+    np.random.shuffle(ytrain_shuffled)
 
     tr_idx = utils.shuffle_idx(ytrain)
     te_idx = utils.shuffle_idx(ytest)
     Xtrain, ytrain = Xtrain[tr_idx], ytrain[tr_idx]
     Xtest, ytest = Xtest[te_idx], ytest[te_idx]
 
-    # Set number of images to train on
-    batchsz = len(ytrain)
-    Xtrain, ytrain = Xtrain[:batchsz], ytrain[:batchsz]
-    Xtest, ytest = Xtest[:batchsz], ytest[:batchsz]
+    print(np.unique(ytrain, return_counts=True))
+    print(np.unique(ytest, return_counts=True))
 
+    model = DecisionTreeClassifier(max_depth=3, random_state=utils.SEED).fit(Xtrain, ytrain_shuffled)
+    print(accuracy_score(ytest, model.predict(Xtest)))
 
     # Dummy predicting the training data
-    model = DummyClassifier(random_state=utils.SEED).fit(Xtrain, ytrain)
-    dummytrain = model.predict(Xtrain)
-    dummytest = model.predict(Xtest)
+    # model = DummyClassifier(random_state=utils.SEED).fit(Xtrain, ytrain)
+    # dummytrain = model.predict(Xtrain)
+    # # dummytest = model.predict(Xtest)
 
-    print('dummy error rate train',utils.error_rate(ytrain, dummytrain))
-    print('dummy error rate test',utils.error_rate(ytest, dummytest))
+    # print('dummy error rate train',utils.error_rate(ytrain, dummytrain))
+    # # print('dummy error rate test',utils.error_rate(ytest, dummytest))
     
-    # Non-bounded tree predicting training data
-    model = DecisionTreeClassifier().fit(Xtrain, ytrain)
-    normalTreetrain = model.predict(Xtrain)
-    normalTreetest = model.predict(Xtest)
+    # # Non-bounded tree predicting training data
+    # model = DecisionTreeClassifier(random_state=utils.SEED).fit(Xtrain, ytrain)
+    # normalTreetrain = model.predict(Xtrain)
+    # normalTreetest = model.predict(Xtest)
 
-    print('normal tree error rate',utils.error_rate(ytrain, normalTreetrain))
-    print('normal tree error rate',utils.error_rate(ytest, normalTreetest))
+    # print('tr_tree accuracy',accuracy_score(ytrain, normalTreetrain))
+    # print('te_tree accuracy',accuracy_score(ytest, normalTreetest))
 
-    utils.print_tree_data(model)
+    # utils.print_tree_data(model)
 
-    confusion = confusion_matrix(ytest, normalTreetest, )
-    disp = ConfusionMatrixDisplay(
-        confusion_matrix=confusion,
-        display_labels=FacesDataset.LABELS
-    ).plot(cmap='viridis')
-    plt.savefig('figures/deep-tree-CM.pdf')
+    # confusion = confusion_matrix(ytest, normalTreetest, )
+    # disp = ConfusionMatrixDisplay(
+    #     confusion_matrix=confusion,
+    #     display_labels=FacesDataset.LABELS
+    # ).plot(cmap='viridis')
+    # plt.savefig('figures/deep-tree-CM.pdf')
 
 
     # Dont actually plot this
