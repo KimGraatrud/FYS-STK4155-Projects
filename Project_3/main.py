@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 from parts import cnn, galaxies
-
 from src import utils
 import torch
 
-torch.manual_seed(0)
+torch.manual_seed(utils.SEED)
 
 utils.create_directories()
 

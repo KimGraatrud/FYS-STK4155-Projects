@@ -88,18 +88,17 @@ class Large(nn.Module):
 
 
 def _train(model):
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    # device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device", device)
     model.to(device)
 
     dataset = GalaxyDataset(mode="validate")
     dataloader = DataLoader(dataset, batch_size=256, shuffle=True)
 
-    optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-8)
+    optimizer = optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
     criterion = nn.MSELoss()
 
-    epochs = 5
+    epochs = 100
     i = 0
     rolling_loss = 0
 
