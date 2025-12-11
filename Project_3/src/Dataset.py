@@ -42,3 +42,7 @@ class GalaxyDataset(Dataset):
         data = data.reshape(num_imgs, -1)
 
         return data
+
+    def close(self):
+        if self.file:
+            self.file.close()

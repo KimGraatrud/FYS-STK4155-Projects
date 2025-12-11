@@ -14,91 +14,45 @@ from src import utils
 from src.Dataset import GalaxyDataset
 
 
-class Small(nn.Module):
-    def __init__(self):
-        super(Small, self).__init__()
+class CNN(nn.Module):
+    def __init__(self, *args, kernal_size=3, actvn=nn.LeakyReLU, id=None):
+        super(CNN, self).__init__()
+        sizes = list(args)
+        layers = []
 
-        self.c1 = nn.Conv2d(5, 8, 3)
-        self.pool1 = nn.AvgPool2d(2, 2)
-        self.c2 = nn.Conv2d(8, 8, 3)
-        self.pool2 = nn.AvgPool2d(3, 3)
-        self.l1 = nn.Linear(8 * 9 * 9, 1)
+        prev = 5
+        while len(sizes) > 0:
+            cur = sizes.pop(0)
+            layers.append(nn.Conv2d(prev, cur, 3, padding=1))
+            layers.append(actvn())
+            prev = cur
 
-    def forward(self, x):
-        x = F.leaky_relu(self.c1(x))
-        x = self.pool1(x)
-        x = F.leaky_relu(self.c2(x))
-        x = self.pool2(x)
-        x = torch.flatten(x, start_dim=1)
+        layers.append(nn.MaxPool2d(4, 4))
+        layers.append(nn.Flatten())
+        layers.append(nn.Linear(cur * 16 * 16, 1))
 
-        return self.l1(x)
+        self.network = nn.Sequential(*layers)
+        self.id = id
 
-
-class Medium(nn.Module):
-    def __init__(self):
-        super(Medium, self).__init__()
-
-        self.c1 = nn.Conv2d(5, 8, 3)
-        self.c2 = nn.Conv2d(8, 16, 3)
-        self.pool1 = nn.AvgPool2d(2, 2)
-        self.c3 = nn.Conv2d(16, 32, 4)
-        self.pool2 = nn.AvgPool2d(3, 3)
-
-        self.l1 = nn.Linear(32 * 9 * 9, 1)
+    def filepath(self):
+        if self.id is not None:
+            return os.path.join(utils.MODELS_URL, f"{self.id}.pt")
+        else:
+            return None
 
     def forward(self, x):
-        x = F.leaky_relu(self.c1(x))
-        x = F.leaky_relu(self.c2(x))
-        x = self.pool1(x)
-        x = F.leaky_relu(self.c3(x))
-        x = self.pool2(x)
-
-        x = torch.flatten(x, start_dim=1)
-
-        return self.l1(x)
+        return self.network(x)
 
 
-class Large(nn.Module):
-    def __init__(self):
-        super(Large, self).__init__()
-
-        self.c1 = nn.Conv2d(5, 8, 3)
-        self.c2 = nn.Conv2d(8, 16, 3)
-        self.pool1 = nn.AvgPool2d(2, 2)
-        self.c3 = nn.Conv2d(16, 32, 3)
-        self.c4 = nn.Conv2d(32, 64, 5)
-        self.pool2 = nn.AvgPool2d(3, 2)
-
-        self.l1 = nn.Linear(64 * 11 * 11, 32)
-        self.l2 = nn.Linear(32, 1)
-
-    def forward(self, x):
-        x = F.leaky_relu(self.c1(x))
-        x = F.leaky_relu(self.c2(x))
-        x = self.pool1(x)
-        x = F.leaky_relu(self.c3(x))
-        x = F.leaky_relu(self.c4(x))
-        x = self.pool2(x)
-
-        x = torch.flatten(x, start_dim=1)
-
-        x = F.leaky_relu(self.l1(x))
-
-        return self.l2(x)
-
-
-def _train(model):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("device", device)
+def _train(model, epochs=10, device="cpu", batch_size=256):
     model.to(device)
 
-    dataset = GalaxyDataset(mode="validate")
-    dataloader = DataLoader(dataset, batch_size=256, shuffle=True)
+    dataset = GalaxyDataset(mode="train")
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     optimizer = optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
     criterion = nn.MSELoss()
 
-    epochs = 100
     i = 0
     rolling_loss = 0
 
@@ -113,6 +67,7 @@ def _train(model):
 
             # forward
             pred = model(features).squeeze()
+
             loss = criterion(pred, labels)
 
             # train
@@ -126,22 +81,105 @@ def _train(model):
                 rolling_loss = 0.0
                 i = 0
 
+    dataset.close()
+
+
+def _init_models():
+    # 'deep' models
+    d1 = CNN(8, 16, id="d1")
+    d2 = CNN(8, 16, 16, id="d2")
+    d3 = CNN(16, 16, 32, 32, id="d3")
+    d4 = CNN(16, 16, 32, 32, 32, id="d4")
+    d5 = CNN(16, 16, 32, 32, 64, 64, id="d5")
+    d6 = CNN(16, 16, 16, 32, 32, 32, 64, 64, 64, id="d6")
+
+    # 'wide' models
+    w1 = CNN(8, kernal_size=5, id="w1")
+    w2 = CNN(16, kernal_size=5, id="w2")
+    w3 = CNN(16, 32, kernal_size=5, id="w3")
+    w4 = CNN(16, 32, 64, kernal_size=5, id="w4")
+    w5 = CNN(16, 32, 64, 128, kernal_size=5, id="w5")
+    w6 = CNN(16, 32, 64, 128, 256, kernal_size=5, id="w6")
+
+    ds = [d1, d2, d3, d4, d5, d6]
+    ws = [w1, w2, w3, w4, w5, w6]
+
+    return ds, ws
+
 
 def train_models():
-    small = Small()
-    medium = Medium()
-    large = Large()
+    # --------------------
+    epochs = 1
+    batch_size = 256
+    # device = torch.device("mps")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # --------------------
 
-    try:
-        _train(small)
-        _train(medium)
-        _train(large)
-    except KeyboardInterrupt:
-        pass
+    print("device", device)
 
-    torch.save(small.state_dict(), os.path.join(utils.MODELS_URL, "small.pt"))
-    torch.save(medium.state_dict(), os.path.join(utils.MODELS_URL, "medium.pt"))
-    torch.save(large.state_dict(), os.path.join(utils.MODELS_URL, "large.pt"))
+    ds, ws = _init_models()
+
+    print("Number of trainable params:")
+    print("wide deep")
+    for w, d in zip(ws, ds):
+        print(utils.trainable_params(w), utils.trainable_params(d))
+
+    for model in [*ds, *ws]:
+        print(model.id)
+        _train(model, epochs=epochs, device=device, batch_size=batch_size)
+
+    for model in [*ds, *ws]:
+        torch.save(model.state_dict(), model.filepath())
+
+
+def evaluate_models(mode="validate"):
+    # device = torch.device("mps")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # --------------------
+
+    ds, ws = _init_models()
+
+    for model in [*ds, *ws]:
+        model.load_state_dict(torch.load(model.filepath(), weights_only=True))
+
+    dataset = GalaxyDataset(mode=mode)
+    ds_loader = DataLoader(dataset, batch_size=1024, shuffle=False)
+
+    for models in [ds, ws]:
+        for i, model in enumerate(models):
+            print(model.id)
+
+            # Reporting & Plotting
+            fig, ax = plt.subplots(
+                figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W),
+            )
+
+            preds = torch.tensor([])
+            with torch.no_grad():
+                model.to(device)
+                for imgs, _ in ds_loader:
+                    imgs = imgs.to(device)
+                    pred = model(imgs).squeeze().cpu()
+                    preds = torch.cat((preds, pred))
+
+            # reference line
+            ax.plot(np.linspace(0, 4, 30), np.linspace(0, 4, 30), c="k", lw=1)
+
+            ax.hist2d(
+                dataset.z,
+                preds.numpy(),
+                bins=300,  # increase this if you have memory to spare
+                range=[[0, 4], [0, 4]],
+                norm="log",
+            )
+
+            ax.set_ylim(0, 4)
+            ax.set_title(model.id)
+            if i == 0:
+                ax.set_xlim(0, 4)
+
+            fig.savefig(os.path.join(utils.FIGURES_URL, f"zz_{model.id}"))
+            plt.close(fig)
 
 
 def small_demo():
@@ -218,24 +256,3 @@ def small_demo():
     fig.savefig(os.path.join(utils.FIGURES_URL, "small_demo"))
 
     plt.close(fig)
-
-
-def evaluate_models():
-    # NOT FIXED YET
-    raise
-    models = [Small(), Medium(), Large()]
-    names = ["small", "medium", "large"]
-    testset = FacesDataset(utils.DATA_URL, train=False)
-
-    for model, name in zip(models, names):
-        model.load_state_dict(
-            torch.load(os.path.join(utils.MODELS_URL, f"{name}.pt"), weights_only=True)
-        )
-
-        model.eval()
-
-        print(name)
-        correct, total = utils.dataset_accuracy_breakdown(model, testset)
-        for i in range(5):
-            print(f"{i:6}{correct[i] / total[i]:10.4f}")
-        print(f"{'Total':>6}{np.sum(correct) / np.sum(total):10.4f}")

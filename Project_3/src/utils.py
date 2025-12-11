@@ -5,9 +5,9 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
 DATA_PATHS = {
-    "train": "/Users/simon/projects/school/uio/ml/FYS-STK4155-Projects/Project_3/data/5x64x64_training_with_morphology.hdf5",
-    "validate": "/home/stevensj/Coding/uio/masters/fys-stk4155/FYS-STK4155-Projects/Project_3/data/5x64x64_validation_with_morphology.hdf5",
-    "test": "/home/stevensj/Coding/uio/masters/fys-stk4155/FYS-STK4155-Projects/Project_3/data/5x64x64_testing_with_morphology.hdf5",
+    "train": "./data/5x64x64_training_with_morphology.hdf5",
+    "validate": "./data/5x64x64_validation_with_morphology.hdf5",
+    "test": "./data/5x64x64_testing_with_morphology.hdf5",
 }
 APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
 FIGURES_URL = "./figures/"

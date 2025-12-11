@@ -78,3 +78,5 @@ def issues():
 
     fig.savefig(path.join(utils.FIGURES_URL, "issues"))
     plt.close(fig)
+
+    ds.close()

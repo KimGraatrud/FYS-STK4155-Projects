@@ -7,10 +7,13 @@ torch.manual_seed(utils.SEED)
 
 utils.create_directories()
 
-# plt.style.use("./style.mplstyle")
+plt.style.use("./style.mplstyle")
 
-galaxies.main()
 cnn.train_models()
+cnn.evaluate_models()
+# galaxies.issues()
+# galaxies.demo()
+# cnn.train_models()
 # cnn.small_demo()
 # cnn.evaluate_models()
 # autotree.main()
