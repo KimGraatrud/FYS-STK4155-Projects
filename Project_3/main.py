@@ -8,7 +8,7 @@ torch.manual_seed(0)
 
 utils.create_directories()
 
-plt.style.use("./style.mplstyle")
+# plt.style.use("./style.mplstyle")
 
 galaxies.main()
 cnn.train_models()

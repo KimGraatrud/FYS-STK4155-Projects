@@ -11,7 +11,7 @@ from src import utils
 from src.FacesDataset import FacesDataset
 from parts import tree, modelselectCNN, hybrid
 
-# print('Running tree.main()')
-# tree.main()
-print('Running hybrid.main()')
-hybrid.main()
+print('Running tree.main()')
+tree.main()
+# print('Running hybrid.main()')
+# hybrid.main()
