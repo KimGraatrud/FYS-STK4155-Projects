@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from src import utils
 from src.Dataset import GalaxyDataset
-
+import gc
 
 class CNN(nn.Module):
     def __init__(self, *args, kernal_size=3, actvn=nn.LeakyReLU, id=None):
@@ -139,28 +139,29 @@ def evaluate_models(mode="validate"):
 
     ds, ws = _init_models()
 
-    for model in [*ds, *ws]:
-        model.load_state_dict(torch.load(model.filepath(), weights_only=True))
-
     dataset = GalaxyDataset(mode=mode)
-    ds_loader = DataLoader(dataset, batch_size=1024, shuffle=False)
+    ds_loader = DataLoader(dataset, batch_size=768, shuffle=False)
 
     for models in [ds, ws]:
         for i, model in enumerate(models):
-            print(model.id)
+            print('evaluating:', model.id)
+
+            state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
+            model.load_state_dict(state)
 
             # Reporting & Plotting
             fig, ax = plt.subplots(
                 figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W),
             )
 
-            preds = torch.tensor([])
+            preds = []
             with torch.no_grad():
                 model.to(device)
                 for imgs, _ in ds_loader:
                     imgs = imgs.to(device)
-                    pred = model(imgs).squeeze().cpu()
-                    preds = torch.cat((preds, pred))
+                    output = model(imgs).squeeze().cpu()
+                    preds.append(output)
+            preds = torch.cat(preds)
 
             # reference line
             ax.plot(np.linspace(0, 4, 30), np.linspace(0, 4, 30), c="k", lw=1)
@@ -168,7 +169,7 @@ def evaluate_models(mode="validate"):
             ax.hist2d(
                 dataset.z,
                 preds.numpy(),
-                bins=300,  # increase this if you have memory to spare
+                bins=500,  # increase this if you have memory to spare, I did - Kim
                 range=[[0, 4], [0, 4]],
                 norm="log",
             )
@@ -181,6 +182,16 @@ def evaluate_models(mode="validate"):
             fig.savefig(os.path.join(utils.FIGURES_URL, f"zz_{model.id}"))
             plt.close(fig)
 
+            # Free memory the model used and force garbage collection.
+            model.to("cpu")
+
+            models[i] = None
+
+            del state
+            del model
+
+            torch.cuda.empty_cache()
+            gc.collect()
 
 def small_demo():
     # NOT FIXED YET

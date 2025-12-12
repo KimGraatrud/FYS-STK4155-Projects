@@ -9,7 +9,7 @@ utils.create_directories()
 
 plt.style.use("./style.mplstyle")
 
-cnn.train_models()
+# cnn.train_models()
 cnn.evaluate_models()
 # galaxies.issues()
 # galaxies.demo()
