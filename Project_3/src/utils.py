@@ -1,13 +1,15 @@
 import os
+from os.path import join
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
+DATA_PATH = "./data/"
 DATA_PATHS = {
-    "train": "./data/5x64x64_training_with_morphology.hdf5",
-    "validate": "./data/5x64x64_validation_with_morphology.hdf5",
-    "test": "./data/5x64x64_testing_with_morphology.hdf5",
+    "train": join(DATA_PATH, "5x64x64_training_with_morphology.hdf5"),
+    "validate": join(DATA_PATH, "5x64x64_validation_with_morphology.hdf5"),
+    "test": join(DATA_PATH, "5x64x64_testing_with_morphology.hdf5"),
 }
 APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
 FIGURES_URL = "./figures/"

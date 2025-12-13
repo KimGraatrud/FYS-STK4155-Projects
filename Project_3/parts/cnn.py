@@ -14,6 +14,7 @@ from src import utils
 from src.Dataset import GalaxyDataset
 import gc
 
+
 class CNN(nn.Module):
     def __init__(self, *args, kernal_size=3, actvn=nn.LeakyReLU, id=None):
         super(CNN, self).__init__()
@@ -132,66 +133,114 @@ def train_models():
         torch.save(model.state_dict(), model.filepath())
 
 
+def _zz_plot(model, dataset, device="cpu", batch_size=256):
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+    # Reporting & Plotting
+    fig, ax = plt.subplots(
+        figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W),
+    )
+
+    preds = []
+    with torch.no_grad():
+        model.to(device)
+        for imgs, _ in loader:
+            imgs = imgs.to(device)
+            output = model(imgs).squeeze().cpu()
+            preds.append(output)
+    preds = torch.cat(preds)
+
+    # reference line
+    ax.plot(np.linspace(0, 4, 30), np.linspace(0, 4, 30), c="k", lw=1)
+
+    ax.hist2d(
+        dataset.z,
+        preds.numpy(),
+        bins=100,
+        range=[[0, 4], [0, 4]],
+        norm="log",
+    )
+
+    ax.set_ylim(0, 4)
+    ax.set_xlim(0, 4)
+    ax.set_title(model.id)
+
+    fig.savefig(os.path.join(utils.FIGURES_URL, f"zz_{model.id}"))
+
+    plt.close(fig)
+    torch.cuda.empty_cache()
+
+
+def _evaluate(model, dataset, device="cpu", batch_size=256):
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
+    model.load_state_dict(state)
+
+    score = nn.MSELoss()
+
+    total_score = 0.0
+    i = 0
+    with torch.no_grad():
+        model.to(device)
+        for imgs, labs in loader:
+            imgs = imgs.to(device)
+            pred = model(imgs).squeeze().cpu()
+
+            total_score += score(pred, labs).item()
+            i += 1
+
+    torch.cuda.empty_cache()
+
+    return total_score / i
+
+
 def evaluate_models(mode="validate"):
-    # device = torch.device("mps")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    kwargs = {
+        "device": torch.device("mps"),
+        # 'device': torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        "batch_size": 32,
+    }
     # --------------------
 
     ds, ws = _init_models()
 
     dataset = GalaxyDataset(mode=mode)
-    ds_loader = DataLoader(dataset, batch_size=768, shuffle=False)
+
+    scores = []
+    params = []
+    ids = []
 
     for models in [ds, ws]:
         for i, model in enumerate(models):
-            print('evaluating:', model.id)
-
+            print("evaluating:", model.id)
             state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
             model.load_state_dict(state)
 
-            # Reporting & Plotting
-            fig, ax = plt.subplots(
-                figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W),
-            )
+            # get the score
+            score = _evaluate(model, dataset, **kwargs)
+            scores.append(score)
+            params.append(utils.trainable_params(model))
+            ids.append(model.id)
 
-            preds = []
-            with torch.no_grad():
-                model.to(device)
-                for imgs, _ in ds_loader:
-                    imgs = imgs.to(device)
-                    output = model(imgs).squeeze().cpu()
-                    preds.append(output)
-            preds = torch.cat(preds)
-
-            # reference line
-            ax.plot(np.linspace(0, 4, 30), np.linspace(0, 4, 30), c="k", lw=1)
-
-            ax.hist2d(
-                dataset.z,
-                preds.numpy(),
-                bins=500,  # increase this if you have memory to spare, I did - Kim
-                range=[[0, 4], [0, 4]],
-                norm="log",
-            )
-
-            ax.set_ylim(0, 4)
-            ax.set_title(model.id)
-            if i == 0:
-                ax.set_xlim(0, 4)
-
-            fig.savefig(os.path.join(utils.FIGURES_URL, f"zz_{model.id}"))
-            plt.close(fig)
+            # _zz_plot(model, dataset, **kwargs)
 
             # Free memory the model used and force garbage collection.
             model.to("cpu")
-
             models[i] = None
 
-            del state
             del model
+            del state
 
-            torch.cuda.empty_cache()
             gc.collect()
+
+    path = os.path.join(utils.DATA_PATH, "evaluation.npz")
+    np.savez(
+        path,
+        scores=scores,
+        params=params,
+        ids=ids,
+    )
+
 
 def small_demo():
     # NOT FIXED YET
@@ -267,3 +316,41 @@ def small_demo():
     fig.savefig(os.path.join(utils.FIGURES_URL, "small_demo"))
 
     plt.close(fig)
+
+
+def plot_evaluation():
+    path = os.path.join(utils.DATA_PATH, "evaluation.npz")
+    f = np.load(path)
+    scores = np.array(f["scores"])
+    params = np.array(f["params"])
+    ids = f["ids"]
+
+    ds = [params[:6], scores[:6]]
+    ws = [params[6:], scores[6:]]
+
+    fig, ax = plt.subplots(figsize=(utils.APS_COL_W, 0.6 * utils.APS_COL_W))
+    ax.scatter(ds[0], ds[1], s=12, c="k", marker="x", label="Deep")
+    ax.scatter(ws[0], ws[1], s=6, c="k", marker="D", label="Wide")
+
+    ax.set_xscale("log")
+    ax.set_ylim(0, 0.17)
+    ax.set_xlim(1e3, 1e6)
+    ax.set_xlabel(r"\# of trainable parameters")
+    ax.set_ylabel("Validation MSE")
+    ax.set_title("Model Success vs. Complexity")
+
+    ax.legend()
+
+    fpth = os.path.join(utils.FIGURES_URL, "model_mse")
+    fig.savefig(fpth)
+    plt.close(fig)
+
+
+def main():
+    # train_models()
+    # evaluate_models()
+    plot_evaluation()
+
+
+if __name__ == "__main__":
+    main()
