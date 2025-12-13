@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from parts import cnn, galaxies
+from parts import cnn_training, galaxies
 from src import utils
 import torch
 
@@ -9,7 +9,7 @@ utils.create_directories()
 
 plt.style.use("./style.mplstyle")
 
-cnn.main()
+cnn_training.main()
 # galaxies.issues()
 # galaxies.demo()
 # autotree.main()
