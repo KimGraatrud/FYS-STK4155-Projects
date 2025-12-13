@@ -1,11 +1,12 @@
 import os
-import torch
+
+import numpy as np
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from . import utils
 from src.Dataset import GalaxyDataset
+from torch.utils.data import DataLoader
+
+from . import utils
 
 
 class CNN(nn.Module):
@@ -45,17 +46,26 @@ class CNN(nn.Module):
         return self.network(x)
 
 
-def train(model, epochs=10, device="cpu", batch_size=256):
+def train(model, epochs=10, device="cpu", batch_size=256, trace=False, **opt_kwargs):
     model.to(device)
 
     dataset = GalaxyDataset(mode="train")
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8)
+    train_params = {
+        "lr": 1e-3,
+        "betas": (0.9, 0.999),
+        "eps": 1e-8,
+        **opt_kwargs,
+    }
+
+    optimizer = optim.Adam(model.parameters(), **train_params)
     criterion = nn.MSELoss()
 
     i = 0
     rolling_loss = 0
+
+    losses = []
 
     for epoch in range(epochs):
         for batch in iter(dataloader):
@@ -75,6 +85,10 @@ def train(model, epochs=10, device="cpu", batch_size=256):
             loss.backward()
             optimizer.step()
 
+            # tracing
+            if trace:
+                losses.append(loss.item())
+
             # reporting
             rolling_loss += loss.item()
             if i % 100 == 0:
@@ -83,3 +97,6 @@ def train(model, epochs=10, device="cpu", batch_size=256):
                 i = 0
 
     dataset.close()
+
+    if trace:
+        return np.array(losses)

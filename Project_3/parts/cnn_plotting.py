@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from matplotlib.gridspec import GridSpec
 from src import utils
-from .cnn_training import init_models
+from .cnn_training import init_model
 from src.Dataset import GalaxyDataset
 from torch.utils.data import DataLoader
 
@@ -25,8 +25,7 @@ def _plot_channels(channels, fig, nrows=4):
 
 
 def small_demo():
-    deeps, _ = init_models()
-    model = deeps[0]
+    model = init_model("d1")
     state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
     model.load_state_dict(state)
     model.eval()
@@ -108,6 +107,33 @@ def plot_evaluation(path):
     plt.close(fig)
 
 
+def plot_traces(path):
+    f = np.load(path)
+    traces = f["traces"]
+    rates = f["rates"]
+
+    fig, ax = plt.subplots(figsize=(utils.APS_COL_W, 0.8 * utils.APS_COL_W))
+
+    x = np.arange(1, traces.shape[1] + 1)
+
+    for lr, trace in zip(rates, traces):
+        rep = np.format_float_scientific(lr)  # this is a little hacky
+        mantissa, exp = rep.split("e")
+        label = r"$\eta=" + f"{float(mantissa):.1f}" + r"\times" + f"10^{{{int(exp)}}}$"
+        ax.plot(x, trace, label=label)
+
+    fig.legend(loc="outside lower center", ncols=2, frameon=False)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+
+    ax.set_xlabel("Batch")
+    ax.set_ylabel("Batch error")
+    ax.set_title(r"Error During Descent for Various $\eta$")
+
+    fig.savefig(os.path.join(utils.FIGURES_URL, "traces"))
+    plt.close(fig)
+
+
 def _zz_plot(model, dataset, device="cpu", batch_size=256):
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
@@ -147,7 +173,9 @@ def _zz_plot(model, dataset, device="cpu", batch_size=256):
 
 
 def main():
-    eval_path = os.path.join(utils.DATA_PATH, "evaluation.npz")
+    eval_path = os.path.join(utils.RESULTS_URL, "evaluation.npz")
+    trace_path = os.path.join(utils.RESULTS_URL, "traces.npz")
 
+    plot_traces(trace_path)
     plot_evaluation(eval_path)
     small_demo()
