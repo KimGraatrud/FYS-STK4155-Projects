@@ -37,7 +37,7 @@ class Machine(nn.Module):
         x = self.pool1(x)
         x = F.leaky_relu(self.c2(x))
         x = self.pool2(x)
-        x = F.leaky_relu(self.c2(x))
+        x = F.leaky_relu(self.c3(x))
         x = self.pool3(x)
 
         x = torch.flatten(x, start_dim=1)
