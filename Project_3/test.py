@@ -8,10 +8,14 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from src import utils, Dataset
-from parts import tree
+from parts import tree, best_results
 
-print('Running tree.main()')
-tree.main()
+plt.style.use("./style.mplstyle")
+
+# print('Running tree.main()')
+# tree.main()
 # print('Running hybrid.main()')
 # hybrid.main()
+print('Running best_results.main()')
+best_results.main()
 
