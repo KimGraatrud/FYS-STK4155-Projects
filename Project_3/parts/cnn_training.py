@@ -100,7 +100,7 @@ def _evaluate(model, dataset, batch_size=256):
             total_score += score(pred, labs).item()
             i += 1
 
-    return total_score / i
+    return np.sqrt(total_score / i)
 
 
 def evaluate_models(mode="validate", savepath=None, batch_size=32):

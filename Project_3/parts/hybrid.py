@@ -24,9 +24,9 @@ class Machine(nn.Module):
     def __init__(self):
         super(Machine, self).__init__()
 
-        self.c1 = nn.Conv2d(1, 4, 3)
+        self.c1 = nn.Conv2d(5, 8, 3, padding=1)
         self.pool1 = nn.AvgPool2d(3, 3)
-        self.c2 = nn.Conv2d(4, 8, 5)
+        self.c2 = nn.Conv2d(8, 8, 5, padding=2)
         self.pool2 = nn.AvgPool2d(3, 3)
         self.l1 = nn.Linear(8 * 3 * 3, 5)
 
@@ -146,7 +146,7 @@ def extract_conv_features(dataset, model, device, batchsize=32):
 
 def main():
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = utils.device
     print("Using device:", device)
 
     trainset = Dataset.GalaxyDataset("train")
