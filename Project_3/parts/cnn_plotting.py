@@ -134,8 +134,20 @@ def plot_traces(path):
     plt.close(fig)
 
 
-def _zz_plot(model, dataset, device="cpu", batch_size=256):
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+def zz_best(eval_path, batch_size=256, bins=100):
+    f = np.load(eval_path)
+    scores = np.array(f["scores"])
+    ids = np.array(f["ids"])
+
+    i = np.argmax(scores)
+    id = ids[i]
+    print("Best performing: ", id, scores[i])
+
+    model = init_model("d1")
+    # model = init_model(id)
+
+    ds = GalaxyDataset(mode="validate")
+    loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
 
     # Reporting & Plotting
     fig, ax = plt.subplots(
@@ -144,9 +156,9 @@ def _zz_plot(model, dataset, device="cpu", batch_size=256):
 
     preds = []
     with torch.no_grad():
-        model.to(device)
+        model.to(utils.device)
         for imgs, _ in loader:
-            imgs = imgs.to(device)
+            imgs = imgs.to(utils.device)
             output = model(imgs).squeeze().cpu()
             preds.append(output)
     preds = torch.cat(preds)
@@ -155,9 +167,9 @@ def _zz_plot(model, dataset, device="cpu", batch_size=256):
     ax.plot(np.linspace(0, 4, 30), np.linspace(0, 4, 30), c="k", lw=1)
 
     ax.hist2d(
-        dataset.z,
+        ds.z,
         preds.numpy(),
-        bins=100,
+        bins=bins,
         range=[[0, 4], [0, 4]],
         norm="log",
     )
@@ -179,3 +191,4 @@ def main():
     plot_traces(trace_path)
     plot_evaluation(eval_path)
     small_demo()
+    zz_best(eval_path, batch_size=32, bins=100)

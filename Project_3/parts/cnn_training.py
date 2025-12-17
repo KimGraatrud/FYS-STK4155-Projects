@@ -26,9 +26,9 @@ _model_params = {
     "w1": ([8], {"kernal_size": 5}),
     "w2": ([16], {"kernal_size": 5}),
     "w3": ([16, 32], {"kernal_size": 5}),
-    "w4": ([16, 32, 64], {"kernal_size": 5}),
-    "w5": ([16, 32, 64, 128], {"kernal_size": 5}),
-    "w6": ([16, 32, 64, 128, 256], {"kernal_size": 5}),
+    "w4": ([16, 32, 64], {"kernal_size": 7}),
+    "w5": ([16, 32, 64, 128], {"kernal_size": 7}),
+    "w6": ([16, 32, 64, 128, 256], {"kernal_size": 7}),
 }
 
 
@@ -49,7 +49,7 @@ def train_models(**kwargs):
     """
     for model in init_models_iter():
         print(model.id, f"{utils.trainable_params(model)} trainable params")
-        train(model, device=utils.DEVICE, **kwargs)
+        train(model, device=utils.device, **kwargs)
         torch.save(model.state_dict(), model.filepath())
         del model
         gc.collect()
@@ -67,7 +67,7 @@ def vary_lr(id="d1", savepath=None, **train_kwargs):
         model = init_model(id)
         trace = train(
             model,
-            device=utils.DEVICE,
+            device=utils.device,
             lr=lr,
             trace=True,
             **train_kwargs,
@@ -92,9 +92,9 @@ def _evaluate(model, dataset, batch_size=256):
     total_score = 0.0
     i = 0
     with torch.no_grad():
-        model.to(utils.DEVICE)
+        model.to(utils.device)
         for imgs, labs in loader:
-            imgs = imgs.to(utils.DEVICE)
+            imgs = imgs.to(utils.device)
             pred = model(imgs).squeeze().cpu()
 
             total_score += score(pred, labs).item()
@@ -120,8 +120,6 @@ def evaluate_models(mode="validate", savepath=None, batch_size=32):
         scores.append(score)
         params.append(utils.trainable_params(model))
         ids.append(model.id)
-
-        # _zz_plot(model, dataset, **kwargs)
 
         # Free memory the model used and force garbage collection.
         model.to("cpu")

@@ -10,12 +10,15 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import AdaBoostClassifier, HistGradientBoostingClassifier
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.dummy import DummyClassifier
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.preprocessing import StandardScaler # Feature scaling after 
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
+from sklearn.preprocessing import StandardScaler  # Feature scaling after
 from sklearn.model_selection import train_test_split
 
-# set torch seed 
-torch.manual_seed(utils.SEED)  
+from .cnn_training import init_model
+
+# set torch seed
+torch.manual_seed(utils.SEED)
+
 
 class Machine(nn.Module):
     def __init__(self):
@@ -35,7 +38,6 @@ class Machine(nn.Module):
 
         x = torch.flatten(x, start_dim=1)
         return x
-
 
     def forward(self, x):
 
@@ -65,6 +67,7 @@ def calc_acc(data, model):
     print(
         f"{'Total':>6}{np.sum(train_correct) / np.sum(train_total):10.4f}{np.sum(test_correct) / np.sum(test_total):10.4f}"
     )
+
 
 def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
     trainloader = DataLoader(trainset, batch_size=batchsize, shuffle=True)
@@ -115,6 +118,7 @@ def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
 
     return m
 
+
 def extract_conv_features(dataset, model, device, batchsize=32):
     """
     Extract features of the dataset after training.
@@ -122,8 +126,8 @@ def extract_conv_features(dataset, model, device, batchsize=32):
     """
 
     loader = DataLoader(dataset, batch_size=batchsize, shuffle=False)
-    all_features = []   
-    all_labels = []   
+    all_features = []
+    all_labels = []
 
     # Set model in eval mode
     model.eval()
@@ -139,13 +143,14 @@ def extract_conv_features(dataset, model, device, batchsize=32):
     all_labels = torch.cat(all_labels, dim=0).numpy()
     return all_features, all_labels
 
+
 def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print('Using device:', device)
+    print("Using device:", device)
 
-    trainset = Dataset.GalaxyDataset('train')
-    testset = Dataset.GalaxyDataset('test')
+    trainset = Dataset.GalaxyDataset("train")
+    testset = Dataset.GalaxyDataset("test")
     print("trainset", len(trainset))
     print("testset", len(testset))
 
@@ -158,9 +163,13 @@ def main():
     normalTreetrain = model.predict(tr_features)
     normalTreetest = model.predict(te_features)
 
-    print('normal tree RMSE train', np.sqrt(mean_squared_error(tr_labels, normalTreetrain)))
-    print('normal tree RMSE test', np.sqrt(mean_squared_error(te_labels, normalTreetest)))
-    print('normal tree R^2 test', r2_score(te_labels, normalTreetest))
+    print(
+        "normal tree RMSE train",
+        np.sqrt(mean_squared_error(tr_labels, normalTreetrain)),
+    )
+    print(
+        "normal tree RMSE test", np.sqrt(mean_squared_error(te_labels, normalTreetest))
+    )
+    print("normal tree R^2 test", r2_score(te_labels, normalTreetest))
 
     utils.print_tree_data(model)
-

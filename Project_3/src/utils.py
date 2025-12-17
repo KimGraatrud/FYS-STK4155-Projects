@@ -1,7 +1,10 @@
 import os
 from os.path import join
 import numpy as np
+import h5py as h5
 import torch
+from torch.utils.data import DataLoader
+from src.Dataset import GalaxyDataset
 
 DATA_PATH = "./data/"
 DATA_PATHS = {
@@ -12,6 +15,7 @@ DATA_PATHS = {
 FIGURES_URL = "./figures/"
 MODELS_URL = "./models/"
 RESULTS_URL = "./results/"
+NORM_URL = join(RESULTS_URL, "norm.npz")
 
 # For figure sizing
 APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
@@ -20,8 +24,8 @@ APS_COL_W = 246 / 72.27  # (col width in pts / pts in inch)
 SEED = 2025
 rng = np.random.default_rng(seed=SEED)
 
-# DEVICE = torch.device("mps")
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("mps")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # create a home for figures, models, etc.
@@ -53,3 +57,36 @@ def print_tree_data(treeModel):
     print(f"    - Depth: {treeModel.get_n_leaves()}")
     print(f"    - Number of leaves: {treeModel.get_n_leaves()}")
     print(f"    - Parameters: {treeModel.get_params()}")
+
+
+def compute_normalization():
+    print("computing normalization")
+    ds = GalaxyDataset(mode="train", normalize=False)
+    loader = DataLoader(ds, batch_size=32, shuffle=False)
+
+    # This would prabably be faster if everything was
+    # in memory at once, but simon's computer can't
+    # handle that so we batch instead
+
+    # mean
+    total = np.zeros(ds.images.shape[1])
+    for images, _ in loader:
+        total += torch.sum(images, (0, 2, 3)).numpy()
+
+    dss = ds.images.shape
+    mean = total / (dss[0] * dss[2] * dss[3])
+    print("mean:", mean)
+
+    mean_exp = torch.tensor(np.expand_dims(mean, (0, 2, 3)), dtype=torch.float32)
+
+    # std
+    var = np.zeros_like(mean)
+    for images, _ in loader:
+        var += torch.sum((images - mean_exp) ** 2, (0, 2, 3)).numpy()
+
+    std = np.sqrt(var / (dss[0] * dss[2] * dss[3] - 1))
+    print("std:", std)
+
+    ds.close()
+
+    np.savez(NORM_URL, mean=mean, std=std)

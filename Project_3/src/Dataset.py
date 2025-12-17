@@ -5,7 +5,7 @@ import numpy as np
 
 
 class GalaxyDataset(Dataset):
-    def __init__(self, mode="train"):
+    def __init__(self, mode="train", normalize=True):
         """
         :param mode: 'train', 'test', or 'validate'
         """
@@ -16,11 +16,21 @@ class GalaxyDataset(Dataset):
         self.images = self.file["image"]
         self.z = self.file["specz_redshift"]
 
+        self.normalize = normalize
+        if normalize:
+            norm = np.load(utils.NORM_URL)
+            self.mean = np.expand_dims(norm["mean"], (1, 2))
+            self.std = np.expand_dims(norm["std"], (1, 2))
+
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, index):
-        return self.images[index], self.z[index]
+        img = self.images[index]
+        if self.normalize:
+            img = (img - self.mean) / self.std
+
+        return img, self.z[index]
 
     def flat(self, num_imgs=None):
         """
@@ -37,8 +47,16 @@ class GalaxyDataset(Dataset):
         # Load slice from the HDF5 dataset
         data = self.images[:num_imgs]
 
-        # Convert to numpy and flatten
+        # Convert to numpy
         data = np.array(data, dtype=np.float32)
+
+        # Normalize
+        if self.normalize:
+            mu = np.expand_dims(self.mean, 0)
+            sigma = np.expand_dims(self.std, 0)
+            data = (data - mu) / sigma
+
+        # Flatten
         data = data.reshape(num_imgs, -1)
 
         return data, np.array(self.z)

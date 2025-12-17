@@ -19,10 +19,10 @@ ytick.minor.width: 0.3
 xtick.minor.width: 0.3
 
 ## Fonts
-# text.usetex: True
+text.usetex: True
 # mathtext.fontset: cm
-# font.family: serif
-# font.serif: Computer Modern Roman
+font.family: serif
+font.serif: Computer Modern Roman
 legend.fontsize: 10
 axes.titlesize: 10
 figure.titlesize: 10

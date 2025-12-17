@@ -35,6 +35,8 @@ class CNN(nn.Module):
 
         self.network = nn.Sequential(*layers)
         self.id = id
+    
+    
 
     def filepath(self):
         if self.id is not None:
@@ -95,6 +97,7 @@ def train(model, epochs=10, device="cpu", batch_size=256, trace=False, **opt_kwa
                 print(f"[{epoch}] {rolling_loss / i:.4f}")
                 rolling_loss = 0.0
                 i = 0
+                break
 
     dataset.close()
 
