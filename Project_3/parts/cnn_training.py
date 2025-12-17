@@ -1,12 +1,16 @@
 import gc
 import os
 
+# Try to prevent vram fragmentation
+# has to be called before torch import
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 import numpy as np
+from src import utils
+from src.Dataset import GalaxyDataset
 import torch
 import torch.nn as nn
-from src import utils
 from src.CNN import CNN, train
-from src.Dataset import GalaxyDataset
 from torch.utils.data import DataLoader
 
 
@@ -49,6 +53,7 @@ def train_models(**kwargs):
         torch.save(model.state_dict(), model.filepath())
         del model
         gc.collect()
+        torch.cuda.empty_cache()
 
 
 def vary_lr(id="d1", savepath=None, **train_kwargs):
@@ -140,24 +145,27 @@ def main():
     eval_path = os.path.join(utils.RESULTS_URL, "evaluation.npz")
     trace_path = os.path.join(utils.RESULTS_URL, "traces.npz")
 
+    epoc = 10
+    batch = 256
+
     print("Training different architectures")
     train_models(
-        epochs=1,
-        batch_size=256,
+        epochs=epoc,
+        batch_size=batch,
     )
 
     print("Training different learning rates")
     vary_lr(
         id="d1",
         savepath=trace_path,
-        epochs=1,
-        batch_size=32,
+        epochs=epoc,
+        batch_size=batch,
     )
 
     print("Evaluating models")
     evaluate_models(
         mode="validate",
-        batch_size=32,
+        batch_size=batch,
         savepath=eval_path,
     )
 

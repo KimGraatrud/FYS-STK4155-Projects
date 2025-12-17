@@ -41,7 +41,7 @@ class GalaxyDataset(Dataset):
         data = np.array(data, dtype=np.float32)
         data = data.reshape(num_imgs, -1)
 
-        return data
+        return data, np.array(self.z)
 
     def close(self):
         if self.file:

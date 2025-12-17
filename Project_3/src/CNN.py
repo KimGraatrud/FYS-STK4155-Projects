@@ -23,7 +23,7 @@ class CNN(nn.Module):
                     prev,
                     cur,
                     kernel_size=kernal_size,
-                    padding=1,
+                    padding=int((kernal_size - 1) / 2),
                 )
             )
             layers.append(actvn())

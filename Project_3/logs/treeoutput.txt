@@ -1,0 +1,39 @@
+Running tree.main()
+small tree test RMSE: 0.3371, R²: 0.6436
+small tree took: 22.56 min
+dummy train RMSE: 0.5730, R²: 0.0000
+dummy test  RMSE: 0.5646, R²: -0.0001
+dummy regressor took: 0.00 min
+deep tree train RMSE: 0.0000, R²: 1.0000
+deep tree test  RMSE: 0.3744, R²: 0.5603
+deep tree took: 126.68 min
+grad boost train RMSE: 0.2218, R²: 0.8501
+grad boost test  RMSE: 0.2543, R²: 0.7971
+grad boost took: 9.73 min
+Running tree.main()
+[01/20] RMSE=0.2454, R²=0.8111, params={'l2_regularization': np.float64(21.54434690031882), 'max_leaf_nodes': np.int64(63), 'min_samples_leaf': np.int64(20)}
+[02/20] RMSE=0.2552, R²=0.7957, params={'l2_regularization': np.float64(10000.0), 'max_leaf_nodes': np.int64(31), 'min_samples_leaf': np.int64(5)}
+[03/20] RMSE=0.2555, R²=0.7952, params={'l2_regularization': np.float64(0.0001), 'max_leaf_nodes': np.int64(15), 'min_samples_leaf': np.int64(20)}
+[04/20] RMSE=0.2530, R²=0.7992, params={'l2_regularization': np.float64(0.0001), 'max_leaf_nodes': np.int64(31), 'min_samples_leaf': np.int64(5)}
+[05/20] RMSE=0.2577, R²=0.7916, params={'l2_regularization': np.float64(166.81005372000558), 'max_leaf_nodes': np.int64(15), 'min_samples_leaf': np.int64(5)}
+[06/20] RMSE=0.2577, R²=0.7916, params={'l2_regularization': np.float64(166.81005372000558), 'max_leaf_nodes': np.int64(15), 'min_samples_leaf': np.int64(5)}
+[07/20] RMSE=0.2559, R²=0.7945, params={'l2_regularization': np.float64(0.046415888336127774), 'max_leaf_nodes': np.int64(15), 'min_samples_leaf': np.int64(5)}
+[08/20] RMSE=0.2493, R²=0.8050, params={'l2_regularization': np.float64(0.046415888336127774), 'max_leaf_nodes': np.int64(63), 'min_samples_leaf': np.int64(20)}
+[09/20] RMSE=0.2474, R²=0.8079, params={'l2_regularization': np.float64(0.0001), 'max_leaf_nodes': np.int64(63), 'min_samples_leaf': np.int64(5)}
+[10/20] RMSE=0.2505, R²=0.8032, params={'l2_regularization': np.float64(0.005994842503189409), 'max_leaf_nodes': np.int64(31), 'min_samples_leaf': np.int64(20)}
+[11/20] RMSE=0.2500, R²=0.8039, params={'l2_regularization': np.float64(166.81005372000558), 'max_leaf_nodes': np.int64(63), 'min_samples_leaf': np.int64(20)}
+[12/20] RMSE=0.2528, R²=0.7995, params={'l2_regularization': np.float64(21.54434690031882), 'max_leaf_nodes': np.int64(15), 'min_samples_leaf': np.int64(20)}
+[13/20] RMSE=0.2552, R²=0.7957, params={'l2_regularization': np.float64(10000.0), 'max_leaf_nodes': np.int64(31), 'min_samples_leaf': np.int64(5)}
+[14/20] RMSE=0.2542, R²=0.7973, params={'l2_regularization': np.float64(2.782559402207126), 'max_leaf_nodes': np.int64(15), 'min_samples_leaf': np.int64(5)}
+[15/20] RMSE=0.2453, R²=0.8112, params={'l2_regularization': np.float64(0.046415888336127774), 'max_leaf_nodes': np.int64(63), 'min_samples_leaf': np.int64(5)}
+[16/20] RMSE=0.2571, R²=0.7926, params={'l2_regularization': np.float64(0.005994842503189409), 'max_leaf_nodes': np.int64(15), 'min_samples_leaf': np.int64(20)}
+[17/20] RMSE=0.2555, R²=0.7952, params={'l2_regularization': np.float64(0.0001), 'max_leaf_nodes': np.int64(15), 'min_samples_leaf': np.int64(20)}
+[18/20] RMSE=0.2513, R²=0.8019, params={'l2_regularization': np.float64(0.0001), 'max_leaf_nodes': np.int64(31), 'min_samples_leaf': np.int64(20)}
+[19/20] RMSE=0.2570, R²=0.7928, params={'l2_regularization': np.float64(1291.5496650148827), 'max_leaf_nodes': np.int64(15), 'min_samples_leaf': np.int64(20)}
+[20/20] RMSE=0.2484, R²=0.8064, params={'l2_regularization': np.float64(0.005994842503189409), 'max_leaf_nodes': np.int64(63), 'min_samples_leaf': np.int64(20)}
+
+Best result:
+RMSE: 0.24531146374082655
+R²: 0.8111836626987035
+Best params: {'l2_regularization': np.float64(0.046415888336127774), 'max_leaf_nodes': np.int64(63), 'min_samples_leaf': np.int64(5)}
+grad boost model selection took: 248.59 min

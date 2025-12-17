@@ -1,151 +1,198 @@
-from src import utils, FacesDataset, GradBoosting 
-import numpy as np
-from torch.utils.data import DataLoader
-import torch
+from src import utils, Dataset
 from joblib import Parallel, delayed
+import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.ensemble import AdaBoostClassifier, HistGradientBoostingClassifier
-from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.dummy import DummyClassifier
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
-from sklearn.model_selection import train_test_split
+import time
+
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.dummy import DummyRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
 
 
-# Set torch seed to be sure.
-torch.manual_seed(utils.SEED)
-
-def t_model_search_boost(data, reg_range, leaf_range, nodes_range):
+def regression_metrics(y_true, y_pred):
     """
-    Variational model selection approach for gradient boosting,
-    here varying the L2 regularization, max number of leafs and min number of samples per leaf.
+    Returns RMSE and R^2.
+    """
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    r2 = r2_score(y_true, y_pred)
+    return rmse, r2
 
-    Multithread the search using joblib.
+
+def t_model_search_boost_random(
+    data,
+    reg_range,
+    leaf_range,
+    nodes_range,
+    n_iter=20,
+    seed=utils.SEED):
+    """
+    Randomized hyperparameter search for HistGradientBoostingRegressor.
+    Selection criterion: RMSE (lower is better).
     """
 
+    rng = utils.rng
     Xtrain, Xtest, ytrain, ytest = data
 
-    boost = GradBoosting.TreeClassifiers(Xtrain)
+    def sample_params():
+        return {
+            "l2_regularization": rng.choice(reg_range),
+            "max_leaf_nodes": rng.choice(leaf_range),
+            "min_samples_leaf": rng.choice(nodes_range),
+        }
 
-    def train_and_eval(reg, lr, nr):
-        boostedtest = boost.HistBoost(ytrain, Xtest, l2=reg, max_leaf=lr, min_samples=nr)
-        err = utils.error_rate(ytest, boostedtest)
-        return err
+    best_rmse = np.inf
+    best_r2 = None
+    best_params = None
 
-    results = Parallel(n_jobs=-1)(
-        delayed(train_and_eval)(reg, lr, nr)
-        for reg in reg_range 
-        for lr in leaf_range
-        for nr in nodes_range
-    )
+    for i in range(n_iter):
+        params = sample_params()
 
-    # Reshape the 1D results array back into the 2D err matrix
-    err = np.array(results).reshape(len(reg_range), len(leaf_range), len(nodes_range))
+        model = HistGradientBoostingRegressor(
+            max_iter=500,               # reduced for search
+            early_stopping=True,
+            random_state=seed,
+            **params,
+        )
 
-    best_tree = np.argmin(err)
-    print('idx:',best_tree)
-    print('error rate:',err.flatten()[best_tree])
-    i,j, k = np.unravel_index(best_tree, err.shape)
-    print(f'With l2={reg_range[i]}, number of leafs={leaf_range[j]}, and min samples={nodes_range[k]}')
+        model.fit(Xtrain, ytrain)
+        y_pred = model.predict(Xtest)
 
-def plot_feature_importances(model, filename, L, H):
+        rmse, r2 = regression_metrics(ytest, y_pred)
+
+        if rmse < best_rmse:
+            best_rmse = rmse
+            best_r2 = r2
+            best_params = params
+
+        print(
+            f"[{i+1:02d}/{n_iter}] "
+            f"RMSE={rmse:.4f}, R²={r2:.4f}, params={params}"
+        )
+
+    print("\nBest result:")
+    print("RMSE:", best_rmse)
+    print("R²:", best_r2)
+    print("Best params:", best_params)
+
+    return best_params, best_rmse, best_r2
+
+def best_grad_boost():
     """
-    Plot the feature importance of a trained model.
+    The best hyperparameters found during a long hyperparameter search.
 
-    To show the reason for the bad preformance.
+    Returns the hyperparameters of the best gradient boosted model we found.
     """
-
-
-    importances = model.feature_importances_.reshape(L, H)
-    plt.imshow(importances, cmap="viridis")
-    plt.colorbar()
-    plt.savefig(filename)
-    plt.show()
+    params = {
+        'l2': np.float64(0.046415888336127774),
+        'max_leaf_nodes': np.int64(63),
+        'min_leaf_samples': np.int64(5)
+    }
+    return params
 
 def main():
 
     # Load datasets
-    Xtrain, ytrain = FacesDataset.FacesDataset(utils.DATA_URL, train=True).flat()
-    Xtest, ytest = FacesDataset.FacesDataset(utils.DATA_URL, train=False).flat()
+    Xtrain, ytrain = Dataset.GalaxyDataset('train').flat()
+    Xtest, ytest = Dataset.GalaxyDataset('test').flat()
 
-    print(Xtrain.shape)
-    print(Xtest.shape)
-    print(ytrain.shape)
-    print(ytest.shape)
-
-    ytrain_shuffled = ytrain.copy()
-    np.random.shuffle(ytrain_shuffled)
-
+    # Shuffle
     tr_idx = utils.shuffle_idx(ytrain)
     te_idx = utils.shuffle_idx(ytest)
     Xtrain, ytrain = Xtrain[tr_idx], ytrain[tr_idx]
     Xtest, ytest = Xtest[te_idx], ytest[te_idx]
 
-    print(np.unique(ytrain, return_counts=True))
-    print(np.unique(ytest, return_counts=True))
+    # Small regression tree
+    start_time = time.time()
 
-    model = DecisionTreeClassifier(max_depth=3, random_state=utils.SEED).fit(Xtrain, ytrain_shuffled)
-    print(accuracy_score(ytest, model.predict(Xtest)))
+    model = DecisionTreeRegressor(
+        max_depth=3,
+        random_state=utils.SEED
+    ).fit(Xtrain, ytrain)
 
-    # Dummy predicting the training data
-    # model = DummyClassifier(random_state=utils.SEED).fit(Xtrain, ytrain)
-    # dummytrain = model.predict(Xtrain)
-    # # dummytest = model.predict(Xtest)
+    y_pred = model.predict(Xtest)
+    rmse, r2 = regression_metrics(ytest, y_pred)
 
-    # print('dummy error rate train',utils.error_rate(ytrain, dummytrain))
-    # # print('dummy error rate test',utils.error_rate(ytest, dummytest))
-    
-    # # Non-bounded tree predicting training data
-    # model = DecisionTreeClassifier(random_state=utils.SEED).fit(Xtrain, ytrain)
-    # normalTreetrain = model.predict(Xtrain)
-    # normalTreetest = model.predict(Xtest)
+    print(f'small tree test RMSE: {rmse:.4f}, R²: {r2:.4f}')
+    print(f'small tree took: {(time.time() - start_time)/60:.2f} min')
 
-    # print('tr_tree accuracy',accuracy_score(ytrain, normalTreetrain))
-    # print('te_tree accuracy',accuracy_score(ytest, normalTreetest))
+    # Dummy regressor
+    start_time = time.time()
 
-    # utils.print_tree_data(model)
+    model = DummyRegressor(strategy="mean").fit(Xtrain, ytrain)
+    tr_pred = model.predict(Xtrain)
+    te_pred = model.predict(Xtest)
 
-    # confusion = confusion_matrix(ytest, normalTreetest, )
-    # disp = ConfusionMatrixDisplay(
-    #     confusion_matrix=confusion,
-    #     display_labels=FacesDataset.LABELS
-    # ).plot(cmap='viridis')
-    # plt.savefig('figures/deep-tree-CM.pdf')
+    tr_rmse, tr_r2 = regression_metrics(ytrain, tr_pred)
+    te_rmse, te_r2 = regression_metrics(ytest, te_pred)
 
+    print(f'dummy train RMSE: {tr_rmse:.4f}, R²: {tr_r2:.4f}')
+    print(f'dummy test  RMSE: {te_rmse:.4f}, R²: {te_r2:.4f}')
+    print(f'dummy regressor took: {(time.time() - start_time)/60:.2f} min')
 
-    # Dont actually plot this
-    # plt.figure(figsize=(18, 10))
-    # plot_tree(
-    #     model,
-    #     filled=True,
-    # )
-    # plt.savefig('figures/bigtree.pdf')
-    # plt.show()
+    # DONT RUN UNBOUNDED TREE UNLESS:
+    #   - you have a system with a lot of RAM
+    #   - you have two hours to watch paint dry...
 
-    # # Gradient boost
-    # model = HistGradientBoostingClassifier(
-    #         loss='log_loss',
-    #         # learning_rate=learningrate,
-    #         # l2_regularization=l2,
-    #         # max_leaf_nodes=max_leaf,
-    #         # min_samples_leaf=min_samples,
-    #         # early_stopping=False, # try and save on some compute 
-    #         random_state=utils.SEED
+    # # Unbounded regression tree
+    # start_time = time.time()
+
+    # model = DecisionTreeRegressor(
+    #     random_state=utils.SEED
     # ).fit(Xtrain, ytrain)
-    # trboosted = model.predict(Xtrain)
-    # teboosted = model.predict(Xtest)
-    # print('grad boost train error rate',utils.error_rate(ytrain, trboosted))
-    # print('grad boost test error rate',utils.error_rate(ytest, teboosted))
 
-    # # Boosted tree
-    # regs = np.logspace(-4,4, 10)
+    # tr_pred = model.predict(Xtrain)
+    # te_pred = model.predict(Xtest)
+
+    # tr_rmse, tr_r2 = regression_metrics(ytrain, tr_pred)
+    # te_rmse, te_r2 = regression_metrics(ytest, te_pred)
+
+    # print(f'deep tree train RMSE: {tr_rmse:.4f}, R²: {tr_r2:.4f}')
+    # print(f'deep tree test  RMSE: {te_rmse:.4f}, R²: {te_r2:.4f}')
+    # print(f'deep tree took: {(time.time() - start_time)/60:.2f} min')
+
+    # Gradient Boosting Regressor
+    start_time = time.time()
+
+    model = HistGradientBoostingRegressor(
+        random_state=utils.SEED
+    ).fit(Xtrain, ytrain)
+
+    tr_pred = model.predict(Xtrain)
+    te_pred = model.predict(Xtest)
+
+    tr_rmse, tr_r2 = regression_metrics(ytrain, tr_pred)
+    te_rmse, te_r2 = regression_metrics(ytest, te_pred)
+
+    print(f'grad boost train RMSE: {tr_rmse:.4f}, R²: {tr_r2:.4f}')
+    print(f'grad boost test  RMSE: {te_rmse:.4f}, R²: {te_r2:.4f}')
+    print(f'grad boost took: {(time.time() - start_time)/60:.2f} min')
+
+    # DONT RUN THE CODE BELOW UNLESS:
+    #   - you have all the time in the world, approx 3hrs on a very good CPU
+    #   - you have a system with atleast 60GB of RAM
+
+    # Use the validate set for search
+    # free memory
+    # del Xtest
+    # del ytest
+
+    # Xval, yval = Dataset.GalaxyDataset('validate').flat()
+    # va_idx = utils.shuffle_idx(ytest)
+    # Xval, yval = Xtest[va_idx], ytest[va_idx]
+
+    # Hyperparameter search for boosting
+    # start_time = time.time()
+
+    # regs = np.logspace(-4, 4, 10)
     # leafs = np.array([15, 31, 63])
     # sampls = np.array([5, 20])
-    # data = (Xtrain, Xtest, ytrain, ytest)
-    # t_model_search_boost(data, regs, leafs, sampls)
+    # data = (Xtrain, Xval, ytrain, yval)
 
-if __name__=='__main__':
+    # t_model_search_boost_random(data, regs, leafs, sampls)
+
+    # print(f'grad boost model selection took: {(time.time() - start_time)/60:.2f} min')
+
+
+if __name__ == '__main__':
     main()
-    
-
-
-

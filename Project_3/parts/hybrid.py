@@ -1,4 +1,4 @@
-from src import utils, FacesDataset
+from src import utils, Dataset
 import numpy as np
 from torch.utils.data import DataLoader
 import torch
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import AdaBoostClassifier, HistGradientBoostingClassifier
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.dummy import DummyClassifier
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler # Feature scaling after 
 from sklearn.model_selection import train_test_split
 
@@ -144,8 +144,8 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('Using device:', device)
 
-    trainset = FacesDataset.FacesDataset(utils.DATA_URL, train=True)
-    testset = FacesDataset.FacesDataset(utils.DATA_URL, train=False)
+    trainset = Dataset.GalaxyDataset('train')
+    testset = Dataset.GalaxyDataset('test')
     print("trainset", len(trainset))
     print("testset", len(testset))
 
@@ -153,12 +153,14 @@ def main():
     tr_features, tr_labels = extract_conv_features(trainset, model, device=device)
     te_features, te_labels = extract_conv_features(testset, model, device=device)
 
+    # Find out how much it improved the normal tree preformance
     model = DecisionTreeClassifier().fit(tr_features, tr_labels)
     normalTreetrain = model.predict(tr_features)
     normalTreetest = model.predict(te_features)
 
-    print('normal tree error rate', accuracy_score(tr_labels, normalTreetrain))
-    print('normal tree error rate', accuracy_score(te_labels, normalTreetest))
+    print('normal tree RMSE train', np.sqrt(mean_squared_error(tr_labels, normalTreetrain)))
+    print('normal tree RMSE test', np.sqrt(mean_squared_error(te_labels, normalTreetest)))
+    print('normal tree R^2 test', r2_score(te_labels, normalTreetest))
 
     utils.print_tree_data(model)
 
