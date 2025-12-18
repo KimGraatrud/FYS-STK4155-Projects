@@ -16,8 +16,8 @@ if not os.path.exists(utils.NORM_URL):
 
 print("device", utils.device)
 
-cnn_training.main()
-# cnn_plotting.main()
+# cnn_training.main()
+cnn_plotting.main()
 # galaxies.issues()
 # galaxies.demo()
 # galaxies.test()

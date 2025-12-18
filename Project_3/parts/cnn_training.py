@@ -96,10 +96,11 @@ def vary_lr(id="d1", savepath=None, **train_kwargs):
         np.savez(savepath, traces=traces, rates=lrs)
 
 
-def _evaluate_all(model, dataset, batch_size=256):
+def _evaluate_all(model, dataset, batch_size=256, load=True):
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-    state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
-    model.load_state_dict(state)
+    if load: 
+        state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
+        model.load_state_dict(state)
 
     preds = np.array([])
     with torch.no_grad():

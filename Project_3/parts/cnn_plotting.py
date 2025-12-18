@@ -80,6 +80,18 @@ def small_demo():
 
     plt.close(fig)
 
+def eval_rmse_r2(target, prediction):
+
+    ss_res = np.sum((target - prediction) ** 2)
+
+    rmse = np.sqrt(ss_res / len(prediction))
+
+    ss_tot = np.sum((target - np.mean(target)) ** 2)
+
+    r2 = (1 - (ss_res / ss_tot))
+
+    return rmse, r2
+
 
 def plot_evaluation():
     models = list(init_models_iter())
@@ -108,22 +120,15 @@ def plot_evaluation():
 
     rmses = []
     r2 = []
-    mean = np.mean(dset.z)
     for model in models:
         fp = os.path.join(utils.RESULTS_URL, f"{model.id}.npy")
         # bp = os.path.join(utils.RESULTS_URL, f"{model.id}_best.npy")
         final = np.load(fp)
 
-        ss_res = np.sum((dset.z - final) ** 2)
-
-        rmse = np.sqrt(ss_res / len(final))
+        rmse, _r2 = eval_rmse_r2(dset.z, final)
         rmses.append(rmse)
+        r2.append(_r2)
 
-        ss_tot = np.sum((dset.z - mean) ** 2)
-
-        r2.append(1 - (ss_res / ss_tot))
-
-        # best = np.load(bp)
 
     ds = [params[:6], r2[:6], training_times[:6]]
     ws = [params[6:], r2[6:], training_times[6:]]
@@ -233,8 +238,8 @@ def main():
     # model = "d2"
 
     # plot_traces(trace_path)
-    # plot_evaluation()
+    plot_evaluation()
     # small_demo()
-    for model in _model_params.keys():
-        zz(os.path.join(utils.RESULTS_URL, f"{model}.npy"), model)
-        zz(os.path.join(utils.RESULTS_URL, f"{model}.npy"), f"{model}_best")
+    # for model in _model_params.keys():
+    #     zz(os.path.join(utils.RESULTS_URL, f"{model}.npy"), model)
+    #     zz(os.path.join(utils.RESULTS_URL, f"{model}.npy"), f"{model}_best")

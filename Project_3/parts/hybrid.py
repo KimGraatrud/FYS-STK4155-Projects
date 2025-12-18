@@ -5,16 +5,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 import time 
-from .cnn_training import init_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor
-
+from .cnn_training import _evaluate_all
+from .cnn_plotting import eval_rmse_r2
 
 # set torch seed
 torch.manual_seed(utils.SEED)
@@ -77,6 +75,10 @@ def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
     trainloader = DataLoader(trainset, batch_size=batchsize, shuffle=True)
     m = Machine()
     m.to(device)
+
+    trainable_params = utils.trainable_params(m)
+    print('Number of trainable params:', trainable_params)
+    raise
 
     optimizer = optim.Adam(m.parameters(), lr=1e-4, betas=(0.9, 0.999), eps=1e-8)
     criterion = nn.MSELoss()
@@ -160,13 +162,26 @@ def main():
     print("testset", len(testset))
 
     # CNN Training
-    CNN_train_start = time.time()
-    CNNmodel = trainmodel(trainset, device=device, verbose=True, max_epocs=10)
-    CNN_train_end = time.time()
+    # CNN_train_start = time.time()
+    # CNNmodel = trainmodel(trainset, device=device, verbose=True, max_epocs=10)
+    # CNN_train_end = time.time()
 
-    print("CNN training time (s):", CNN_train_end - CNN_train_start)
+    # print("CNN training time (s):", CNN_train_end - CNN_train_start)
 
-    torch.save(CNNmodel.state_dict(), utils.MODELS_URL + "hybridCNN")
+    # torch.save(CNNmodel.state_dict(), utils.MODELS_URL + "hybridCNN")
+
+    CNNmodel = Machine()
+    state = torch.load(utils.MODELS_URL + "hybridCNN.pt", weights_only=True, map_location="cpu")
+    CNNmodel.load_state_dict(state)
+
+    CNNmodel.eval()
+
+    bg = time.time()
+    prediction = _evaluate_all(CNNmodel, testset, load=False)
+    ed = time.time()
+    print('pred took:', ed-bg)
+    rmses, r2s = eval_rmse_r2(testset.z, prediction)
+    print(rmses, r2s)
 
     # Feature Extraction
     feat_start = time.time()
