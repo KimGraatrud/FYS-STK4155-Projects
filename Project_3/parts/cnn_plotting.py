@@ -83,8 +83,11 @@ def small_demo():
 def plot_evaluation(path):
     f = np.load(path)
     scores = np.array(f["scores"])
+    print("scores", scores)
     params = np.array(f["params"])
+    print("params", params)
     ids = f["ids"]
+    print("ids", ids)
 
     ds = [params[:6], scores[:6]]
     ws = [params[6:], scores[6:]]
@@ -134,51 +137,45 @@ def plot_traces(path):
     plt.close(fig)
 
 
-def zz_best(eval_path, batch_size=256, bins=100):
-    f = np.load(eval_path)
-    scores = np.array(f["scores"])
-    ids = np.array(f["ids"])
+def zz(eval_path, name, bins=100):
+    preds = np.load(eval_path)
 
-    i = np.argmax(scores)
-    id = ids[i]
-    print("Best performing: ", id, scores[i])
-
-    model = init_model("d1")
+    # model = init_model("d1")
     # model = init_model(id)
 
     ds = GalaxyDataset(mode="validate")
-    loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
+    # loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
 
     # Reporting & Plotting
     fig, ax = plt.subplots(
         figsize=(utils.APS_COL_W, 0.7 * utils.APS_COL_W),
     )
 
-    preds = []
-    with torch.no_grad():
-        model.to(utils.device)
-        for imgs, _ in loader:
-            imgs = imgs.to(utils.device)
-            output = model(imgs).squeeze().cpu()
-            preds.append(output)
-    preds = torch.cat(preds)
+    # preds = []
+    # with torch.no_grad():
+    #     model.to(utils.device)
+    #     for imgs, _ in loader:
+    #         imgs = imgs.to(utils.device)
+    #         output = model(imgs).squeeze().cpu()
+    #         preds.append(output)
+    # preds = torch.cat(preds)
 
     # reference line
     ax.plot(np.linspace(0, 4, 30), np.linspace(0, 4, 30), c="k", lw=1)
 
     ax.hist2d(
         ds.z,
-        preds.numpy(),
+        preds,
         bins=bins,
         range=[[0, 4], [0, 4]],
         norm="log",
     )
 
-    ax.set_ylim(0, 4)
-    ax.set_xlim(0, 4)
-    ax.set_title(model.id)
+    # ax.set_ylim(0, 4)
+    # ax.set_xlim(0, 4)
+    # ax.set_title(model.id)
 
-    fig.savefig(os.path.join(utils.FIGURES_URL, f"zz_{model.id}"))
+    fig.savefig(os.path.join(utils.FIGURES_URL, f"zz_{name}"))
 
     plt.close(fig)
     torch.cuda.empty_cache()
@@ -188,7 +185,10 @@ def main():
     eval_path = os.path.join(utils.RESULTS_URL, "evaluation.npz")
     trace_path = os.path.join(utils.RESULTS_URL, "traces.npz")
 
-    plot_traces(trace_path)
-    plot_evaluation(eval_path)
-    small_demo()
-    zz_best(eval_path, batch_size=32, bins=100)
+    model = "d2"
+
+    # plot_traces(trace_path)
+    # plot_evaluation(eval_path)
+    # small_demo()
+    zz(os.path.join(utils.RESULTS_URL, f"{model}.npy"), model)
+    zz(os.path.join(utils.RESULTS_URL, f"{model}.npy"), f"{model}_best")

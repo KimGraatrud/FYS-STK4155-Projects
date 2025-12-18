@@ -8,6 +8,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from src import utils, Dataset
+from parts import tree, best_results, hybrid
 from parts import tree, hybrid, best_results
 
 plt.style.use("./style.mplstyle")

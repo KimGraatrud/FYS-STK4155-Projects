@@ -2,6 +2,7 @@ from torch.utils.data import Dataset
 import h5py as h5
 from src import utils
 import numpy as np
+import torch
 
 
 class GalaxyDataset(Dataset):
@@ -30,6 +31,7 @@ class GalaxyDataset(Dataset):
         if self.normalize:
             img = (img - self.mean) / self.std
 
+        img = torch.tensor(img, dtype=torch.float32)
         return img, self.z[index]
 
     def flat(self, num_imgs=None):

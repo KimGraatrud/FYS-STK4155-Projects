@@ -12,12 +12,10 @@ if not os.path.exists(utils.NORM_URL):
     utils.compute_normalization()
 
 
-# plt.style.use("./style.mplstyle")
+plt.style.use("./style.mplstyle")
 
 print("device", utils.device)
 
-# auto.plot_transition()
-# auto.main()
 cnn_training.main()
 cnn_plotting.main()
 # galaxies.issues()

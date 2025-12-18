@@ -30,9 +30,9 @@ def page_through():
 
 
 def demo():
-    ds = GalaxyDataset(mode="train")
+    ds = GalaxyDataset(mode="train", normalize=False)
 
-    idx = 117
+    idx = 99
 
     img, z = ds[idx]
 
@@ -52,6 +52,7 @@ def demo():
     for ax, c, info in zip(axs, img, bands):
         code, wl, name = info
         ax.imshow(c, cmap=cmap)
+        # ax.imshow(np.log(c), cmap=cmap)
         ax.set_axis_off()
         ax.set_title(f"`{code}'\n{wl} nm\n{name}")
 
@@ -66,13 +67,14 @@ def issues():
     problem_channels = [0, 4, 0, 1, 0]
 
     fig, axs = plt.subplots(
-        ncols=len(problem_idxs), figsize=(utils.APS_COL_W, 2 * utils.APS_COL_W)
+        ncols=len(problem_idxs), figsize=(utils.APS_COL_W, 0.3 * utils.APS_COL_W)
     )
 
     letters = ["a", "b", "c", "d", "e"]
+    cmap = plt.colormaps["Greys"].reversed()
     for ax, idx, chan, let in zip(axs, problem_idxs, problem_channels, letters):
         img = ds[idx][0][chan]
-        ax.imshow(img)
+        ax.imshow(img, cmap=cmap)
         ax.set_axis_off()
         ax.set_title(f"{let}.")
 

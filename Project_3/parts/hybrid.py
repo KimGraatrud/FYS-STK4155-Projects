@@ -24,17 +24,21 @@ class Machine(nn.Module):
     def __init__(self):
         super(Machine, self).__init__()
 
-        self.c1 = nn.Conv2d(5, 8, 3, padding=1)
-        self.pool1 = nn.AvgPool2d(3, 3)
-        self.c2 = nn.Conv2d(8, 8, 5, padding=2)
-        self.pool2 = nn.AvgPool2d(3, 3)
-        self.l1 = nn.Linear(8 * 3 * 3, 5)
+        self.c1 = nn.Conv2d(5, 8, 3)
+        self.pool1 = nn.AvgPool2d(2, 2)
+        self.c2 = nn.Conv2d(8, 8, 5)
+        self.pool2 = nn.AvgPool2d(2, 2)
+        self.c3 = nn.Conv2d(8, 8, 5)
+        self.pool3 = nn.AvgPool2d(3, 3)
+        self.l1 = nn.Linear(8 * 3 * 3, 1)
 
     def conv_forward(self, x):
         x = F.leaky_relu(self.c1(x))
         x = self.pool1(x)
         x = F.leaky_relu(self.c2(x))
         x = self.pool2(x)
+        x = F.leaky_relu(self.c3(x))
+        x = self.pool3(x)
 
         x = torch.flatten(x, start_dim=1)
         return x
@@ -72,9 +76,10 @@ def calc_acc(data, model):
 def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
     trainloader = DataLoader(trainset, batch_size=batchsize, shuffle=True)
     m = Machine()
+    m.to(device)
 
     optimizer = optim.Adam(m.parameters(), lr=0.05, betas=(0.9, 0.999), eps=1e-8)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
 
     print("\ntraining")
     # Training loop
@@ -87,12 +92,12 @@ def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
 
                 # move tensors to the device
                 features = features.to(device)
-                labels = labels.to(device)
+                labels = labels.float().to(device)
 
                 m.zero_grad()
                 optimizer.zero_grad()
 
-                result = m(features)
+                result = m(features).squeeze()
                 loss = criterion(result, labels)
 
                 l = loss.item()
