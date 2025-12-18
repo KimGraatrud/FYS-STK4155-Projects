@@ -183,25 +183,25 @@ def evaluate_models(mode="validate", savepath=None, best=False, batch_size=32):
 
 def main():
     # eval_path = os.path.join(utils.RESULTS_URL, "evaluation.npz")
-    trace_path = os.path.join(utils.RESULTS_URL, "traces.npz")
+    # trace_path = os.path.join(utils.RESULTS_URL, "traces.npz")
 
-    epoc = 10
+    epoc = 15
     batch = 256
 
     print("Training different architectures")
     train_models(
         epochs=epoc,
         batch_size=batch,
-        lr=1e-4,
+        lr=2e-4,
     )
 
-    print("Training different learning rates")
-    vary_lr(
-        id="d1",
-        savepath=trace_path,
-        epochs=epoc,
-        batch_size=batch,
-    )
+    # print("Training different learning rates")
+    # vary_lr(
+    #     id="d1",
+    #     savepath=trace_path,
+    #     epochs=epoc,
+    #     batch_size=batch,
+    # )
 
     print("Evaluating models")
     evaluate_models(

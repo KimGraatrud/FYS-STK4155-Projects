@@ -17,7 +17,7 @@ plt.style.use("./style.mplstyle")
 print("device", utils.device)
 
 cnn_training.main()
-cnn_plotting.main()
+# cnn_plotting.main()
 # galaxies.issues()
 # galaxies.demo()
 # galaxies.test()

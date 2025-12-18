@@ -104,6 +104,7 @@ def train(
 
             if keep_best and (loss.item() < best_loss):
                 best_model = copy.deepcopy(model.state_dict())
+                best_loss = loss.item()
 
             # reporting
             rolling_loss += loss.item()
