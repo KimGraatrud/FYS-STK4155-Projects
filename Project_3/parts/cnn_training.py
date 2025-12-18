@@ -59,7 +59,7 @@ def train_models(**kwargs):
             **kwargs,
         )
         train_end = time.time()
-        print(f'{model.id} took {(train_end - train_start)/60} min to train')
+        print(f"{model.id} took {(train_end - train_start)/60} min to train")
         torch.save(
             train_out["best"],
             os.path.join(utils.MODELS_URL, "best", f"{model.id}.pt"),
@@ -98,7 +98,7 @@ def vary_lr(id="d1", savepath=None, **train_kwargs):
 
 def _evaluate_all(model, dataset, batch_size=256, load=True):
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-    if load: 
+    if load:
         state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
         model.load_state_dict(state)
 
@@ -193,12 +193,12 @@ def main():
     epoc = 15
     batch = 256
 
-    print("Training different architectures")
-    train_models(
-        epochs=epoc,
-        batch_size=batch,
-        lr=2e-4,
-    )
+    # print("Training different architectures")
+    # train_models(
+    #     epochs=epoc,
+    #     batch_size=batch,
+    #     lr=2e-4,
+    # )
 
     # print("Training different learning rates")
     # vary_lr(
@@ -210,7 +210,7 @@ def main():
 
     print("Evaluating models")
     evaluate_models(
-        mode="validate",
+        mode="test",
         batch_size=batch,
         # savepath=eval_path,
         best=False,
@@ -218,7 +218,7 @@ def main():
 
     print("Evaluating best models")
     evaluate_models(
-        mode="validate",
+        mode="test",
         batch_size=batch,
         # savepath=eval_path,
         best=True,
