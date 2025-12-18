@@ -7,14 +7,14 @@ import torch.nn.functional as F
 import torch.optim as optim
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
-from sklearn.ensemble import AdaBoostClassifier, HistGradientBoostingClassifier
-from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.dummy import DummyClassifier
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
-from sklearn.preprocessing import StandardScaler  # Feature scaling after
 from sklearn.model_selection import train_test_split
-
+import time 
 from .cnn_training import init_model
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.dummy import DummyRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
+
 
 # set torch seed
 torch.manual_seed(utils.SEED)
@@ -78,7 +78,7 @@ def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
     m = Machine()
     m.to(device)
 
-    optimizer = optim.Adam(m.parameters(), lr=0.05, betas=(0.9, 0.999), eps=1e-8)
+    optimizer = optim.Adam(m.parameters(), lr=1e-4, betas=(0.9, 0.999), eps=1e-8)
     criterion = nn.MSELoss()
 
     print("\ntraining")
@@ -98,7 +98,7 @@ def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
                 optimizer.zero_grad()
 
                 result = m(features).squeeze()
-                loss = criterion(result, labels)
+                loss = torch.sqrt(criterion(result, labels))
 
                 l = loss.item()
 
@@ -159,22 +159,62 @@ def main():
     print("trainset", len(trainset))
     print("testset", len(testset))
 
-    model = trainmodel(trainset, device=device, verbose=True, max_epocs=10)
-    tr_features, tr_labels = extract_conv_features(trainset, model, device=device)
-    te_features, te_labels = extract_conv_features(testset, model, device=device)
+    # CNN Training
+    CNN_train_start = time.time()
+    CNNmodel = trainmodel(trainset, device=device, verbose=True, max_epocs=10)
+    CNN_train_end = time.time()
 
-    # Find out how much it improved the normal tree preformance
-    model = DecisionTreeClassifier().fit(tr_features, tr_labels)
-    normalTreetrain = model.predict(tr_features)
-    normalTreetest = model.predict(te_features)
+    print("CNN training time (s):", CNN_train_end - CNN_train_start)
 
-    print(
-        "normal tree RMSE train",
-        np.sqrt(mean_squared_error(tr_labels, normalTreetrain)),
+    torch.save(CNNmodel.state_dict(), utils.MODELS_URL + "hybridCNN")
+
+    # Feature Extraction
+    feat_start = time.time()
+    tr_features, tr_labels = extract_conv_features(trainset, CNNmodel, device=device)
+    te_features, te_labels = extract_conv_features(testset, CNNmodel, device=device)
+    feat_end = time.time()
+
+    print("Feature extraction time (s):", feat_end - feat_start)
+    print("Feature dimension:", tr_features.shape[1])
+
+    # Regressor Tree
+    tree_train_start = time.time()
+    tree = DecisionTreeRegressor(
+        random_state=utils.SEED
     )
-    print(
-        "normal tree RMSE test", np.sqrt(mean_squared_error(te_labels, normalTreetest))
-    )
-    print("normal tree R^2 test", r2_score(te_labels, normalTreetest))
+    tree.fit(tr_features, tr_labels)
+    tree_train_end = time.time()
 
-    utils.print_tree_data(model)
+    tree_pred_train_start = time.time()
+    tree_pred_train = tree.predict(tr_features)
+    tree_pred_test = tree.predict(te_features)
+    tree_pred_train_end = time.time()
+
+    print("\nDecision Tree results:")
+    print("Training time (s):", tree_train_end - tree_train_start)
+    print("Prediction time (s):", tree_pred_train_end - tree_pred_train_start)
+    print("RMSE train:", np.sqrt(mean_squared_error(tr_labels, tree_pred_train)))
+    print("RMSE test:", np.sqrt(mean_squared_error(te_labels, tree_pred_test)))
+    print("R^2 test:", r2_score(te_labels, tree_pred_test))
+
+    utils.print_tree_data(tree)
+
+    # Gradient Boosting
+    hgb_train_start = time.time()
+    hgb = HistGradientBoostingRegressor(
+        random_state=utils.SEED
+    )
+    hgb.fit(tr_features, tr_labels)
+    hgb_train_end = time.time()
+
+    hgb_pred_start = time.time()
+    hgb_pred_train = hgb.predict(tr_features)
+    hgb_pred_test = hgb.predict(te_features)
+    hgb_pred_end = time.time()
+
+    print("\nHistGradientBoosting results:")
+    print("Training time (s):", hgb_train_end - hgb_train_start)
+    print("Prediction time (s):", hgb_pred_end - hgb_pred_start)
+    print("RMSE train:", np.sqrt(mean_squared_error(tr_labels, hgb_pred_train)))
+    print("RMSE test:", np.sqrt(mean_squared_error(te_labels, hgb_pred_test)))
+    print("R^2 test:", r2_score(te_labels, hgb_pred_test))
