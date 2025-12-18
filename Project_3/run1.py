@@ -18,7 +18,3 @@ print("device", utils.device)
 
 cnn_training.main()
 cnn_plotting.main()
-# galaxies.issues()
-# galaxies.demo()
-# galaxies.test()
-# auto.plot_transition()

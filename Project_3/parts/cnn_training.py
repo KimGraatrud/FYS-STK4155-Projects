@@ -1,5 +1,6 @@
 import gc
 import os
+import time
 
 # Try to prevent vram fragmentation
 # has to be called before torch import
@@ -50,12 +51,15 @@ def train_models(**kwargs):
     for model in init_models_iter():
         print(model.id, f"{utils.trainable_params(model)} trainable params")
 
+        train_start = time.time()
         train_out = train(
             model,
             device=utils.device,
             keep_best=True,
             **kwargs,
         )
+        train_end = time.time()
+        print(f'{model.id} took {(train_end - train_start)/60} min to train')
         torch.save(
             train_out["best"],
             os.path.join(utils.MODELS_URL, "best", f"{model.id}.pt"),

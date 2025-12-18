@@ -7,14 +7,14 @@ import torch.nn.functional as F
 import torch.optim as optim
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
-from sklearn.ensemble import AdaBoostClassifier, HistGradientBoostingClassifier
-from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.dummy import DummyClassifier
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
-from sklearn.preprocessing import StandardScaler  # Feature scaling after
 from sklearn.model_selection import train_test_split
 import time 
 from .cnn_training import init_model
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.dummy import DummyRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
+
 
 # set torch seed
 torch.manual_seed(utils.SEED)
@@ -78,7 +78,7 @@ def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
     m = Machine()
     m.to(device)
 
-    optimizer = optim.Adam(m.parameters(), lr=0.05, betas=(0.9, 0.999), eps=1e-8)
+    optimizer = optim.Adam(m.parameters(), lr=1e-4, betas=(0.9, 0.999), eps=1e-8)
     criterion = nn.MSELoss()
 
     print("\ntraining")
@@ -98,7 +98,7 @@ def trainmodel(trainset, device, max_epocs=50, batchsize=32, verbose=False):
                 optimizer.zero_grad()
 
                 result = m(features).squeeze()
-                loss = criterion(result, labels)
+                loss = torch.sqrt(criterion(result, labels))
 
                 l = loss.item()
 
