@@ -36,6 +36,8 @@ def demo():
 
     img, z = ds[idx]
 
+    print("demo redshift", z)
+
     # band information taken from
     # https://en.wikipedia.org/wiki/Photometric_system
     bands = [
@@ -54,7 +56,7 @@ def demo():
         ax.imshow(c, cmap=cmap)
         # ax.imshow(np.log(c), cmap=cmap)
         ax.set_axis_off()
-        ax.set_title(f"`{code}'\n{wl} nm\n{name}")
+        ax.set_title(f"${code}$\n{wl} nm\n{name}")
 
     fig.savefig(path.join(utils.FIGURES_URL, "gal_demo"))
     plt.close(fig)
@@ -82,3 +84,26 @@ def issues():
     plt.close(fig)
 
     ds.close()
+
+
+def distribution():
+    ds = GalaxyDataset(mode="train")
+
+    fig, ax = plt.subplots(figsize=(utils.APS_COL_W, 0.5 * utils.APS_COL_W))
+
+    ax.hist(
+        ds.z,
+        bins=150,
+        histtype="stepfilled",
+        alpha=0.6,
+        edgecolor="maroon",
+        color="maroon",
+    )
+
+    ax.set_yscale("log")
+    ax.set_title("Distribution of Training Redshifts")
+    ax.set_xlabel("$z$")
+    ax.set_xlim(0, 4)
+    ax.set_ylabel(r"\# of samples")
+
+    fig.savefig(path.join(utils.FIGURES_URL, "z_range"))

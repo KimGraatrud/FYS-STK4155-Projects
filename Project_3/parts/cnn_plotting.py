@@ -80,6 +80,7 @@ def small_demo():
 
     plt.close(fig)
 
+
 def eval_rmse_r2(target, prediction):
 
     ss_res = np.sum((target - prediction) ** 2)
@@ -88,7 +89,7 @@ def eval_rmse_r2(target, prediction):
 
     ss_tot = np.sum((target - np.mean(target)) ** 2)
 
-    r2 = (1 - (ss_res / ss_tot))
+    r2 = 1 - (ss_res / ss_tot)
 
     return rmse, r2
 
@@ -128,7 +129,6 @@ def plot_evaluation():
         rmse, _r2 = eval_rmse_r2(dset.z, final)
         rmses.append(rmse)
         r2.append(_r2)
-
 
     ds = [params[:6], r2[:6], training_times[:6]]
     ws = [params[6:], r2[6:], training_times[6:]]
@@ -173,31 +173,52 @@ def plot_traces(path):
 
     x = np.arange(1, traces.shape[1] + 1)
 
-    for lr, trace in zip(rates, traces):
+    n = 50
+    window = np.ones(n) / n
+    s = int(n / 2)
+    f = n - s - 1
+
+    batch_size = 256
+    ds = GalaxyDataset(mode="validate")
+    size = len(ds.z)
+    batches_per_epcoh = size / batch_size
+
+    x = x / batches_per_epcoh
+
+    for i, (lr, trace) in enumerate(zip(rates, traces)):
         rep = np.format_float_scientific(lr)  # this is a little hacky
         mantissa, exp = rep.split("e")
         label = r"$\eta=" + f"{float(mantissa):.1f}" + r"\times" + f"10^{{{int(exp)}}}$"
-        ax.plot(x, trace, label=label, alpha=0.5)
+
+        avg = np.convolve(trace, window, mode="valid")
+
+        c = f"C{i}"
+        ax.plot(x[s:-f], avg, label=label, c=c)
+        # ax.plot(x[:s], trace[:s], c=c)
+        # ax.plot(x, trace, c=c, alpha=0.3, lw=0.1)
 
     fig.legend(loc="outside lower center", ncols=2, frameon=False)
     ax.set_xscale("log")
     ax.set_yscale("log")
 
-    ax.set_xlabel("Batch")
-    ax.set_ylabel("Batch error")
+    ax.set_ylim(2e-1, top=4e0)
+    ax.set_xlim(x[s], x[-1])
+
+    ax.set_xlabel("Epochs")
+    ax.set_ylabel("Batch RMSE")
     ax.set_title(r"Error During Descent for Various $\eta$")
 
     fig.savefig(os.path.join(utils.FIGURES_URL, "traces"))
     plt.close(fig)
 
 
-def zz(eval_path, name, bins=150):
-    preds = np.load(eval_path)
-
-    # model = init_model("d1")
-    # model = init_model(id)
-
-    ds = GalaxyDataset(mode="validate")
+def zz(
+    pred,
+    target,
+    filename,
+    title="",
+    bins=150,
+):
 
     # Reporting & Plotting
     fig, ax = plt.subplots(
@@ -210,8 +231,8 @@ def zz(eval_path, name, bins=150):
     norm = mpl.colors.LogNorm(vmin=1, vmax=1e3)
 
     _, _, _, img = ax.hist2d(
-        ds.z,
-        preds,
+        target,
+        pred,
         bins=bins,
         range=[[0, 4], [0, 4]],
         norm=norm,
@@ -219,14 +240,14 @@ def zz(eval_path, name, bins=150):
 
     ax.set_ylim(0, 4)
     ax.set_xlim(0, 4)
-    # ax.set_title(model.id)
+    ax.set_title(title)
 
     ax.set_ylabel(r"$z$ predicted")
     ax.set_xlabel(r"$z$ target")
 
-    fig.colorbar(img)
+    fig.colorbar(img, label=r"Frequency (\#)")
 
-    fig.savefig(os.path.join(utils.FIGURES_URL, f"zz_{name}"))
+    fig.savefig(os.path.join(utils.FIGURES_URL, filename))
 
     plt.close(fig)
     torch.cuda.empty_cache()
@@ -235,11 +256,20 @@ def zz(eval_path, name, bins=150):
 def main():
     trace_path = os.path.join(utils.RESULTS_URL, "traces.npz")
 
-    # model = "d2"
+    models = ["w1_best", "w6_best"]
+    titles = [
+        "Prediction Distribution, Smallest",
+        "Prediction Distribution, Best CNN",
+    ]
+    filenames = [
+        "zz_small",
+        "zz_big",
+    ]
 
     # plot_traces(trace_path)
     plot_evaluation()
     # small_demo()
-    # for model in _model_params.keys():
-    #     zz(os.path.join(utils.RESULTS_URL, f"{model}.npy"), model)
-    #     zz(os.path.join(utils.RESULTS_URL, f"{model}.npy"), f"{model}_best")
+    for model, title, name in zip(models, titles, filenames):
+        preds = np.load(os.path.join(utils.RESULTS_URL, f"{model}.npy"))
+        ds = GalaxyDataset(mode="validate")
+        zz(preds, ds.z, name, title)
