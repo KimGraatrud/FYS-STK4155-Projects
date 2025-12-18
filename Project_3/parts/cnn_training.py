@@ -26,7 +26,7 @@ _model_params = {
     "w1": ([8], {"kernal_size": 5}),
     "w2": ([16], {"kernal_size": 5}),
     "w3": ([16, 32], {"kernal_size": 5}),
-    "w4": ([16, 32, 64], {"kernal_size": 7}),
+    "w4": ([16, 32, 64], {"kernal_size": 5}),
     "w5": ([16, 32, 64, 128], {"kernal_size": 7}),
     "w6": ([16, 32, 64, 128, 256], {"kernal_size": 7}),
 }
@@ -49,7 +49,17 @@ def train_models(**kwargs):
     """
     for model in init_models_iter():
         print(model.id, f"{utils.trainable_params(model)} trainable params")
-        train(model, device=utils.device, **kwargs)
+
+        train_out = train(
+            model,
+            device=utils.device,
+            keep_best=True,
+            **kwargs,
+        )
+        torch.save(
+            train_out["best"],
+            os.path.join(utils.MODELS_URL, "best", f"{model.id}.pt"),
+        )
         torch.save(model.state_dict(), model.filepath())
         del model
         gc.collect()
@@ -65,7 +75,7 @@ def vary_lr(id="d1", savepath=None, **train_kwargs):
     for lr in lrs:
         print(f"learning rate {lr:.2e}")
         model = init_model(id)
-        trace = train(
+        train_out = train(
             model,
             device=utils.device,
             lr=lr,
@@ -73,13 +83,30 @@ def vary_lr(id="d1", savepath=None, **train_kwargs):
             **train_kwargs,
         )
 
-        traces.append(trace)
+        traces.append(train_out["trace"])
 
         del model
         gc.collect()
 
     if savepath is not None:
         np.savez(savepath, traces=traces, rates=lrs)
+
+
+def _evaluate_all(model, dataset, batch_size=256):
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
+    model.load_state_dict(state)
+
+    preds = np.array([])
+    with torch.no_grad():
+        model.to(utils.device)
+        for imgs, _ in loader:
+            imgs = imgs.to(utils.device)
+            pred = model(imgs).squeeze().cpu().numpy()
+
+            preds = np.concat((preds, pred))
+
+    return preds
 
 
 def _evaluate(model, dataset, batch_size=256):
@@ -103,23 +130,38 @@ def _evaluate(model, dataset, batch_size=256):
     return np.sqrt(total_score / i)
 
 
-def evaluate_models(mode="validate", savepath=None, batch_size=32):
+def evaluate_models(mode="validate", savepath=None, best=False, batch_size=32):
     dataset = GalaxyDataset(mode=mode)
 
-    scores = []
-    params = []
-    ids = []
+    # scores = []
+    # params = []
+    # ids = []
 
     for model in init_models_iter():
         print("evaluating:", model.id)
-        state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
+        if best:
+            state = torch.load(
+                os.path.join(utils.MODELS_URL, "best", f"{model.id}.pt"),
+                weights_only=True,
+                map_location="cpu",
+            )
+        else:
+            state = torch.load(model.filepath(), weights_only=True, map_location="cpu")
         model.load_state_dict(state)
+        model.eval()
+
+        preds = _evaluate_all(model, dataset, batch_size=batch_size)
+
+        suffix = "_best" if best else ""
+
+        path = os.path.join(utils.RESULTS_URL, f"{model.id}{suffix}.npy")
+        np.save(path, preds)
 
         # get the score
-        score = _evaluate(model, dataset, batch_size=batch_size)
-        scores.append(score)
-        params.append(utils.trainable_params(model))
-        ids.append(model.id)
+        # score = _evaluate(model, dataset, batch_size=batch_size)
+        # scores.append(score)
+        # params.append(utils.trainable_params(model))
+        # ids.append(model.id)
 
         # Free memory the model used and force garbage collection.
         model.to("cpu")
@@ -130,17 +172,17 @@ def evaluate_models(mode="validate", savepath=None, batch_size=32):
         torch.cuda.empty_cache()
         gc.collect()
 
-    if savepath is not None:
-        np.savez(
-            savepath,
-            scores=scores,
-            params=params,
-            ids=ids,
-        )
+    # if savepath is not None:
+    #     np.savez(
+    #         savepath,
+    #         scores=scores,
+    #         params=params,
+    #         ids=ids,
+    #     )
 
 
 def main():
-    eval_path = os.path.join(utils.RESULTS_URL, "evaluation.npz")
+    # eval_path = os.path.join(utils.RESULTS_URL, "evaluation.npz")
     trace_path = os.path.join(utils.RESULTS_URL, "traces.npz")
 
     epoc = 10
@@ -150,6 +192,7 @@ def main():
     train_models(
         epochs=epoc,
         batch_size=batch,
+        lr=1e-4,
     )
 
     print("Training different learning rates")
@@ -164,7 +207,16 @@ def main():
     evaluate_models(
         mode="validate",
         batch_size=batch,
-        savepath=eval_path,
+        # savepath=eval_path,
+        best=False,
+    )
+
+    print("Evaluating best models")
+    evaluate_models(
+        mode="validate",
+        batch_size=batch,
+        # savepath=eval_path,
+        best=True,
     )
 
 

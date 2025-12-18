@@ -1,6 +1,8 @@
+import copy
 import os
 
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.optim as optim
 from src.Dataset import GalaxyDataset
@@ -35,8 +37,6 @@ class CNN(nn.Module):
 
         self.network = nn.Sequential(*layers)
         self.id = id
-    
-    
 
     def filepath(self):
         if self.id is not None:
@@ -48,7 +48,15 @@ class CNN(nn.Module):
         return self.network(x)
 
 
-def train(model, epochs=10, device="cpu", batch_size=256, trace=False, **opt_kwargs):
+def train(
+    model,
+    epochs=10,
+    device="cpu",
+    batch_size=256,
+    trace=False,
+    keep_best=False,
+    **opt_kwargs,
+):
     model.to(device)
 
     dataset = GalaxyDataset(mode="train")
@@ -57,7 +65,7 @@ def train(model, epochs=10, device="cpu", batch_size=256, trace=False, **opt_kwa
     train_params = {
         "lr": 1e-3,
         "betas": (0.9, 0.999),
-        "eps": 1e-8,
+        "eps": 1e-7,
         **opt_kwargs,
     }
 
@@ -68,6 +76,9 @@ def train(model, epochs=10, device="cpu", batch_size=256, trace=False, **opt_kwa
     rolling_loss = 0
 
     losses = []
+
+    best_model = copy.deepcopy(model.state_dict())
+    best_loss = np.inf
 
     for epoch in range(epochs):
         for batch in iter(dataloader):
@@ -81,7 +92,7 @@ def train(model, epochs=10, device="cpu", batch_size=256, trace=False, **opt_kwa
             # forward
             pred = model(features).squeeze()
 
-            loss = criterion(pred, labels)
+            loss = torch.sqrt(criterion(pred, labels))
 
             # train
             loss.backward()
@@ -91,15 +102,21 @@ def train(model, epochs=10, device="cpu", batch_size=256, trace=False, **opt_kwa
             if trace:
                 losses.append(loss.item())
 
+            if keep_best and (loss.item() < best_loss):
+                best_model = copy.deepcopy(model.state_dict())
+
             # reporting
             rolling_loss += loss.item()
             if i % 100 == 0:
                 print(f"[{epoch}] {rolling_loss / i:.4f}")
                 rolling_loss = 0.0
                 i = 0
-                break
 
     dataset.close()
 
-    if trace:
-        return np.array(losses)
+    ret = {
+        "trace": np.array(losses),
+        "best": best_model,
+    }
+
+    return ret

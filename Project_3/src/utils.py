@@ -36,6 +36,10 @@ def create_directories():
     if not os.path.exists(MODELS_URL):
         os.mkdir(MODELS_URL)
 
+    best = os.path.join(MODELS_URL, "best")
+    if not os.path.exists(best):
+        os.mkdir(best)
+
     if not os.path.exists(RESULTS_URL):
         os.mkdir(RESULTS_URL)
 
