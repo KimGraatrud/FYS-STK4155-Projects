@@ -12,10 +12,10 @@ from parts import tree, hybrid, best_results
 
 plt.style.use("./style.mplstyle")
 
-# print('Running tree.main()')
-# tree.main()
-print('Running hybrid.main()')
-hybrid.main()
+print('Running tree.main()')
+tree.main()
+# print('Running hybrid.main()')
+# hybrid.main()
 # print('Running best_results.main()')
 # best_results.main()
 

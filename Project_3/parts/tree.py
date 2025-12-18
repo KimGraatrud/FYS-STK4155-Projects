@@ -1,9 +1,9 @@
 from src import utils, Dataset
+import joblib
 from joblib import Parallel, delayed
 import numpy as np
+import time, gc
 import matplotlib.pyplot as plt
-import time
-
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.dummy import DummyRegressor
@@ -77,19 +77,6 @@ def t_model_search_boost_random(
 
     return best_params, best_rmse, best_r2
 
-def best_grad_boost():
-    """
-    The best hyperparameters found during a long hyperparameter search.
-
-    Returns the hyperparameters of the best gradient boosted model we found.
-    """
-    params = {
-        'l2': np.float64(0.046415888336127774),
-        'max_leaf_nodes': np.int64(63),
-        'min_leaf_samples': np.int64(5)
-    }
-    return params
-
 def main():
 
     # Load datasets
@@ -102,96 +89,98 @@ def main():
     Xtrain, ytrain = Xtrain[tr_idx], ytrain[tr_idx]
     Xtest, ytest = Xtest[te_idx], ytest[te_idx]
 
+    # Dummy regressor
+    dummy = DummyRegressor(strategy="mean")
     # Small regression tree
-    start_time = time.time()
-
-    model = DecisionTreeRegressor(
+    shallow_tree = DecisionTreeRegressor(
         max_depth=3,
         random_state=utils.SEED
-    ).fit(Xtrain, ytrain)
-
-    y_pred = model.predict(Xtest)
-    rmse, r2 = regression_metrics(ytest, y_pred)
-
-    print(f'small tree test RMSE: {rmse:.4f}, R²: {r2:.4f}')
-    print(f'small tree took: {(time.time() - start_time)/60:.2f} min')
-
-    # Dummy regressor
-    start_time = time.time()
-
-    model = DummyRegressor(strategy="mean").fit(Xtrain, ytrain)
-    tr_pred = model.predict(Xtrain)
-    te_pred = model.predict(Xtest)
-
-    tr_rmse, tr_r2 = regression_metrics(ytrain, tr_pred)
-    te_rmse, te_r2 = regression_metrics(ytest, te_pred)
-
-    print(f'dummy train RMSE: {tr_rmse:.4f}, R²: {tr_r2:.4f}')
-    print(f'dummy test  RMSE: {te_rmse:.4f}, R²: {te_r2:.4f}')
-    print(f'dummy regressor took: {(time.time() - start_time)/60:.2f} min')
+    )
+    # OOB Gradient Boost
+    OOB_grad = HistGradientBoostingRegressor(
+        random_state=utils.SEED
+    )
+    # Gradient Boost with tuned parameters
+    tuned_grad = HistGradientBoostingRegressor(
+        random_state=utils.SEED,
+        l2_regularization=0.046415888336127774,
+        max_leaf_nodes=63,
+        min_samples_leaf=5
+    )
+    models = {
+        # 'Dummy_Tree': dummy,
+        # 'Shallow_Tree': shallow_tree,
+        # 'OOB_Gradient_Boost': OOB_grad,
+        # 'tuned_Gradient_Boost': tuned_grad
+    }
 
     # DONT RUN UNBOUNDED TREE UNLESS:
     #   - you have a system with a lot of RAM
     #   - you have two hours to watch paint dry...
 
-    # # Unbounded regression tree
-    # start_time = time.time()
-
-    # model = DecisionTreeRegressor(
-    #     random_state=utils.SEED
-    # ).fit(Xtrain, ytrain)
-
-    # tr_pred = model.predict(Xtrain)
-    # te_pred = model.predict(Xtest)
-
-    # tr_rmse, tr_r2 = regression_metrics(ytrain, tr_pred)
-    # te_rmse, te_r2 = regression_metrics(ytest, te_pred)
-
-    # print(f'deep tree train RMSE: {tr_rmse:.4f}, R²: {tr_r2:.4f}')
-    # print(f'deep tree test  RMSE: {te_rmse:.4f}, R²: {te_r2:.4f}')
-    # print(f'deep tree took: {(time.time() - start_time)/60:.2f} min')
-
-    # Gradient Boosting Regressor
-    start_time = time.time()
-
-    model = HistGradientBoostingRegressor(
+    models['Unbounded Tree'] = DecisionTreeRegressor(
         random_state=utils.SEED
-    ).fit(Xtrain, ytrain)
+    )
 
-    tr_pred = model.predict(Xtrain)
-    te_pred = model.predict(Xtest)
+    model_names = list(models.keys())
+    for n in model_names:
+        model = models[n]
+        print('Now running for:', n)
 
-    tr_rmse, tr_r2 = regression_metrics(ytrain, tr_pred)
-    te_rmse, te_r2 = regression_metrics(ytest, te_pred)
+        # Train
+        train_start = time.time()
+        model.fit(Xtrain, ytrain)        
+        train_end = time.time()
 
-    print(f'grad boost train RMSE: {tr_rmse:.4f}, R²: {tr_r2:.4f}')
-    print(f'grad boost test  RMSE: {te_rmse:.4f}, R²: {te_r2:.4f}')
-    print(f'grad boost took: {(time.time() - start_time)/60:.2f} min')
+        # Predict
+        tr_pred = model.predict(Xtrain)
+        predict_start = time.time()
+        te_pred = model.predict(Xtest)
+        predict_end = time.time()
 
-    # DONT RUN THE CODE BELOW UNLESS:
-    #   - you have all the time in the world, approx 3hrs on a very good CPU
-    #   - you have a system with atleast 60GB of RAM
+        # Calculate Preformance
+        tr_rmse, tr_r2 = regression_metrics(ytrain, tr_pred)
+        te_rmse, te_r2 = regression_metrics(ytest, te_pred)
+
+        print(f' {n} train RMSE: {tr_rmse}, R²: {tr_r2}')
+        print(f' {n} test RMSE: {te_rmse}, R²: {te_r2}')
+        print(f' {n} training took: {(train_end - train_start)/60} min')
+        print(f' {n} prediction (test only) took: {(predict_end - predict_start)/60} min')
+
+        # Save model
+        joblib.dump(model, utils.RESULTS_URL+f'{n}.joblib')
+        print(f'model {n} saved.')
+
+        # Attempt to save the memory we can
+        del models[n]
+        del model
+        gc.collect()
+
+    # Run Parameter Search for Gradient Boosting
+    # DONT RUN IF:
+    #   - you have > 60GB of RAM
+    #   - can leave the computer running for all day
 
     # Use the validate set for search
     # free memory
-    # del Xtest
-    # del ytest
+    del Xtest
+    del ytest
 
-    # Xval, yval = Dataset.GalaxyDataset('validate').flat()
-    # va_idx = utils.shuffle_idx(ytest)
-    # Xval, yval = Xtest[va_idx], ytest[va_idx]
+    Xval, yval = Dataset.GalaxyDataset('validate').flat()
+    va_idx = utils.shuffle_idx(ytest)
+    Xval, yval = Xtest[va_idx], ytest[va_idx]
 
     # Hyperparameter search for boosting
-    # start_time = time.time()
+    start_time = time.time()
 
-    # regs = np.logspace(-4, 4, 10)
-    # leafs = np.array([15, 31, 63])
-    # sampls = np.array([5, 20])
-    # data = (Xtrain, Xval, ytrain, yval)
+    regs = np.logspace(-4, 4, 10)
+    leafs = np.array([15, 31, 63])
+    sampls = np.array([5, 20])
+    data = (Xtrain, Xval, ytrain, yval)
 
-    # t_model_search_boost_random(data, regs, leafs, sampls)
+    t_model_search_boost_random(data, regs, leafs, sampls)
 
-    # print(f'grad boost model selection took: {(time.time() - start_time)/60:.2f} min')
+    print(f'grad boost model selection took: {(time.time() - start_time)/60:.2f} min')
 
 
 if __name__ == '__main__':
