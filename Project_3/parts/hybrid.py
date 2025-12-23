@@ -162,13 +162,13 @@ def main():
     print("testset", len(testset))
 
     # CNN Training
-    # CNN_train_start = time.time()
-    # CNNmodel = trainmodel(trainset, device=device, verbose=True, max_epocs=10)
-    # CNN_train_end = time.time()
+    CNN_train_start = time.time()
+    CNNmodel = trainmodel(trainset, device=device, verbose=True, max_epocs=10)
+    CNN_train_end = time.time()
 
-    # print("CNN training time (s):", CNN_train_end - CNN_train_start)
+    print("CNN training time (s):", CNN_train_end - CNN_train_start)
 
-    # torch.save(CNNmodel.state_dict(), utils.MODELS_URL + "hybridCNN")
+    torch.save(CNNmodel.state_dict(), utils.MODELS_URL + "hybridCNN")
 
     CNNmodel = Machine()
     state = torch.load(utils.MODELS_URL + "hybridCNN.pt", weights_only=True, map_location="cpu")

@@ -5,7 +5,7 @@ Kim Graatrud, Simon Silverstein, and Nicholas Andrés Tran Rodriguez.
 
 This is the repo contains all the code used to generate the results for our report. **It does not provide the dataset used**, this is due to the large filesize. The dataset can be found [here](https://www.kaggle.com/datasets/samithsachidanandan/human-face-emotions).
 
-`TBD title`
+`Estimating the Redshift of Galaxies Using Image-Based Regression Techniques`
 
 Where we used Scikit-learn's and Pytorch's implementations of trees, gradient boosting, and CNNs respectively to study how they preform on image recognition of human face emotions. 
 
@@ -38,12 +38,7 @@ git clone https://github.com/KimGraatrud/FYS-STK4155-Projects.git
 cd FYS-STK4155-Projects/Project_3/
 ```
 
-Note: Before the code is run, ensure you have a `./Data/` and a `./figures/` directory as that is where the output of `parts/` will be placed. Unfortunatly the data also contains some invalid entries, meaning that the following commands has to be run:
-- `rm ./Data/*/*jpg*`
-- `rm ./Data/*/*[A-z]*.*`
-- `find Data -name '*[[:alpha:]]*.*'`
-
-for a UNIX shell. Find the equivalent for the shell you are using. These commands takes care of the majority, if not all, of the invalid entries.
+Note: Before the code is run, ensure you have a `./Data/` and a `./figures/` directory as that is where the output of `parts/` will be placed. 
 
 ## Dependencies
 

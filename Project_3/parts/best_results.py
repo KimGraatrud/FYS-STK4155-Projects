@@ -11,7 +11,8 @@ plot_params = {
     'edgecolors': 'face',
 }
 
-    # All of this data was taken from ../logs/tree.log
+# All of this data was taken from ../logs/tree.log
+# May not be available in the repo
 
 dummy_tree = {
     'n': 'Dummy',                           # Name
@@ -117,59 +118,10 @@ def plot_tree_preformance(show=False, save=True):
     if save: plt.savefig(utils.FIGURES_URL+'test-RMSE-pre-deeplr.png')
     if show: plt.show()
 
-def plot_post_deeplearning_methods(show=False, save=True):
-
-    models = [
-        dummy_tree,
-        shallow_tree,
-        deep_tree,
-        gradBoost_OOB,
-        gradBoost_tuned,
-        hybrid_GB
-    ]
-
-
-
-    # Scaled Preformance Plot
-    fig, axs = plt.subplots(
-        nrows=2,
-        figsize=(utils.APS_COL_W, 1.2 * utils.APS_COL_W),
-        sharex=True
-    )
-    fig.suptitle('Pre Deeplearning Model Preformance')
-    
-    for ax in axs:
-        ax.grid(True, alpha=.6)
-
-    # Scale their preformance
-    # And plot
-    for model in models:
-        axs[0].scatter(model['n'], model['te_R2'], **plot_params)
-        axs[1].scatter(model['n'], model['te_RMSE'], **plot_params)
-
-    axs[0].set_ylabel('R$^2$')
-    axs[1].set_ylabel('Training time (minutes)')
-    axs[1].tick_params(
-        axis='x',
-        labelrotation=-45,
-        # rotation_mode='anchor',
-    )
-    for label in axs[1].get_xticklabels():
-        label.set_horizontalalignment('left')
-    axs[0].set_ylim(None, .90)
-    fig.tight_layout()
-
-
-
-    if save: plt.savefig(utils.FIGURES_URL+'test-RMSE-pre-deeplr.png')
-    if show: plt.show()
-
-
 
 def main():
 
     plot_tree_preformance()
-    # plot_post_deeplearning_methods()
 
     print(hybrid_GB['tr_runtime'])
     print(hybrid_GB['pred_runtime'])

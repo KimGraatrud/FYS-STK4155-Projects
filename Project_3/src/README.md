@@ -1,5 +1,5 @@
 ### Directory contents
 
 - `CNN.py` - contains our wrapper class of the Pytorch implementation of CNNs
-- `GradBoosting.py` - contains our wrapper class of Scikit-learn's implementations of classifier trees, dummy classifier, and gradient boosted classifier.
-- `...` - ...  
+- `Dataset.py` - contains the loading and pre-prep for the dataset before its used in the models
+- `utils.py` - contains the utils required over multiple files, such as helper functions or constants

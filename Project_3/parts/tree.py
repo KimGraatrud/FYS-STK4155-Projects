@@ -108,10 +108,10 @@ def main():
         min_samples_leaf=5
     )
     models = {
-        # 'Dummy_Tree': dummy,
-        # 'Shallow_Tree': shallow_tree,
-        # 'OOB_Gradient_Boost': OOB_grad,
-        # 'tuned_Gradient_Boost': tuned_grad
+        'Dummy_Tree': dummy,
+        'Shallow_Tree': shallow_tree,
+        'OOB_Gradient_Boost': OOB_grad,
+        'tuned_Gradient_Boost': tuned_grad
     }
 
     # DONT RUN UNBOUNDED TREE UNLESS:
@@ -122,39 +122,39 @@ def main():
     #     random_state=utils.SEED
     # )
 
-    # model_names = list(models.keys())
-    # for n in model_names:
-    #     model = models[n]
-    #     print('Now running for:', n)
+    model_names = list(models.keys())
+    for n in model_names:
+        model = models[n]
+        print('Now running for:', n)
 
-    #     # Train
-    #     train_start = time.time()
-    #     model.fit(Xtrain, ytrain)        
-    #     train_end = time.time()
+        # Train
+        train_start = time.time()
+        model.fit(Xtrain, ytrain)        
+        train_end = time.time()
 
-    #     # Predict
-    #     tr_pred = model.predict(Xtrain)
-    #     predict_start = time.time()
-    #     te_pred = model.predict(Xtest)
-    #     predict_end = time.time()
+        # Predict
+        tr_pred = model.predict(Xtrain)
+        predict_start = time.time()
+        te_pred = model.predict(Xtest)
+        predict_end = time.time()
 
-    #     # Calculate Preformance
-    #     tr_rmse, tr_r2 = regression_metrics(ytrain, tr_pred)
-    #     te_rmse, te_r2 = regression_metrics(ytest, te_pred)
+        # Calculate Preformance
+        tr_rmse, tr_r2 = regression_metrics(ytrain, tr_pred)
+        te_rmse, te_r2 = regression_metrics(ytest, te_pred)
 
-    #     print(f' {n} train RMSE: {tr_rmse}, R²: {tr_r2}')
-    #     print(f' {n} test RMSE: {te_rmse}, R²: {te_r2}')
-    #     print(f' {n} training took: {(train_end - train_start)/60} min')
-    #     print(f' {n} prediction (test only) took: {(predict_end - predict_start)/60} min')
+        print(f' {n} train RMSE: {tr_rmse}, R²: {tr_r2}')
+        print(f' {n} test RMSE: {te_rmse}, R²: {te_r2}')
+        print(f' {n} training took: {(train_end - train_start)/60} min')
+        print(f' {n} prediction (test only) took: {(predict_end - predict_start)/60} min')
 
-    #     # Save model
-    #     joblib.dump(model, utils.RESULTS_URL+f'{n}.joblib')
-    #     print(f'model {n} saved.')
+        # Save model
+        joblib.dump(model, utils.RESULTS_URL+f'{n}.joblib')
+        print(f'model {n} saved.')
 
-    #     # Attempt to save the memory we can
-    #     del models[n]
-    #     del model
-    #     gc.collect()
+        # Attempt to save the memory we can
+        del models[n]
+        del model
+        gc.collect()
 
     # Run Parameter Search for Gradient Boosting
     # DONT RUN IF:
