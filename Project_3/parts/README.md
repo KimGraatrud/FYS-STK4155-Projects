@@ -1,0 +1,6 @@
+- `best_results.py` - contains hardcoded results from logs, for both tree and hybrid models
+- `cnn_training.py` - contains the code for training all CNN models used
+- `cnn_training.py` - plots the result from the trained models and produces the relevant results 
+- `galaxies.py` - plots the dataset and gives examples
+- `tree.py` - contains all the training and evaluation of the tree models used in the paper
+- `hybrid.py` - trains a small CNN model and a gradient boost model and evaluates its performance
