@@ -25,8 +25,8 @@ Our repository has the following structure:
 <!-- GPT generated section end -->
 
 - `src/` houses the source code for the project (gradient decent, regression, etc.)
-- `parts/` imports the code from src and generates the data and figures used in the paper in `doc/figures/`.
-- `doc/` contains the paper in .pdf format and the figures used for it in `figures/`
+- `parts/` imports the code from src and generates the data and figures used in the paper
+- `doc/` contains the paper in .pdf format
 - `main.py` is where we import and call the files from `parts/` and generate all the results.
 - `readme.md` is this file.
 
